@@ -1,5 +1,7 @@
 from django.db import models
+from django.db.models.base import Model
 from django.db.models.deletion import PROTECT
+from telegram import base
 
 
 class Category(models.Model):
@@ -36,6 +38,11 @@ class Language(models.Model):
     successful_registration = models.TextField('Successful registatration', blank=True)
     back = models.TextField('Back button', blank=True)
     chat = models.TextField('Link to chat', blank=True)
+    language_selection = models.TextField('Select a language', blank=True)
+    ask_question = models.TextField('Ask a anonimus question', blank=True)
+    check_question = models.TextField('Chek if question is correct', blank=True)
+    yes = models.TextField('Yes',blank=True)
+    no = models.TextField('No', blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -47,8 +54,17 @@ class User(models.Model):
     phone = models.CharField('User`s phone', max_length=100, blank=True, null=True)
     language = models.ForeignKey(Language, on_delete=PROTECT, default=1)
     chosen_category = models.ForeignKey(Category, on_delete=PROTECT, blank=True, null=True)
+    question = models.TextField('User`s question', blank=True, null=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
+
+
+class Question(models.Model):
+    user_id = models.CharField('User telegram ID', max_length=100)
+    text = models.TextField('Text of the question')
+    status = models.BooleanField('Is question answered ?', default=False)
+    answer = models.TextField('Answer to the question', blank=True, null=True)
+    time = models.DateTimeField('Asked at:', auto_now_add=True)
 
 

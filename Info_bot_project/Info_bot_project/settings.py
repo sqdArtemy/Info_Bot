@@ -108,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Tashkent'
 
 USE_I18N = True
 
@@ -129,4 +129,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TOKEN = '5091830633:AAEY9G4_aQ8pWuIkbgG64hEhZTNy2K1IQ4A'
 
 # Server`s url
-URL = 'https://223f-31-40-28-128.ngrok.io/'
+URL = 'https://c718-213-230-127-84.ngrok.io/'

@@ -1,11 +1,13 @@
 from telegram import *
+from telegram import chat
+from telegram import keyboardbutton
 from telegram.ext import *
 from Info_bot_project.settings import TOKEN
-from bot.models import Language, User
+from bot.models import Language, User, Question
 
 bot = Bot(token=TOKEN)
 #conversation states
-NAME, PHONE = range(2)
+NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION = range(5)
 
 def get_id(update: Update): # returns user`s id 
     try: return update.effective_message.chat_id
@@ -74,19 +76,47 @@ def ask_phone(update: Update, context: CallbackContext): # recieves phone from u
         User.objects.filter(tg_id=chat_id).update(phone=text)
         bot.send_message(chat_id=chat_id, text = get_phrase(update, 'successful_registration'))
         menu(update)
-        return ConversationHandler.END
+        return MENU
     except:
         raise IndexError
 
 def start(update: Update,context: CallbackContext, *args, **kwargs,): # greets users
     try:
         chat_id = get_id(update)
-        text = get_phrase(update, 'greetings')
         user_maker(chat_id)
-        bot.send_message(chat_id=chat_id, text=text, reply_markup=inline_keyboard(update, 'language'))
+        bot.send_message(chat_id=chat_id, text=get_phrase(update, 'greetings'), reply_markup=ReplyKeyboardRemove())
+        bot.send_message(chat_id=chat_id, text=get_phrase(update, 'language_selection'), reply_markup=inline_keyboard(update, 'language'))
         return NAME
     except:
         raise IndexError
+
+def menu(update: Update): # displays main menu to the user   
+    text = get_phrase(update, 'menu')
+    bot.send_message(chat_id=get_id(update), text=text, reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text=get_phrase(update, 'category_menu')),],
+                [KeyboardButton(text=get_phrase(update,'question_menu')),
+                 KeyboardButton(text=get_phrase(update,'chat_menu')),
+                 KeyboardButton(text=get_phrase(update,'info_menu')),
+                ]
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        )
+    )
+
+def question(update: Update,conext: CallbackContext): # proceeds user`s questions   
+    chat_id = get_id(update)
+    text = update.message.text
+    User.objects.filter(tg_id=chat_id).update(question=text)
+    update.message.reply_text(text=(get_phrase(update, 'check_question') + ' ' + text), reply_markup=ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(get_phrase(update, 'yes')), KeyboardButton(get_phrase(update, 'no'))],
+            [KeyboardButton(get_phrase(update, 'back'))],
+        ],
+        resize_keyboard=True
+        )
+    )
+    return QUESTION_VERIFICATION
 
 def message_handler(update: Update, context: CallbackContext): # handles all messages from uses
     chat_id = get_id(update)
@@ -96,10 +126,27 @@ def message_handler(update: Update, context: CallbackContext): # handles all mes
         reply_markup=ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=get_phrase(update, 'back'))]],resize_keyboard=True)
         )
     elif text == get_phrase(update, 'back'):
-        update.message.reply_text(text=get_phrase(update, 'menu'))
         menu(update)
     elif text == get_phrase(update, 'chat_menu'):
         update.message.reply_text(text=get_phrase(update, 'chat'),reply_markup=inline_keyboard(update, 'info'))
+        menu(update)
+    elif text == get_phrase(update, 'question_menu') or text == get_phrase(update, 'no'):
+        update.message.reply_text(text=get_phrase(update, 'ask_question'), reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(get_phrase(update, 'back'))]],
+            resize_keyboard=True
+            )
+        )
+        return QUESTION
+    elif text == get_phrase(update, 'yes'):
+        chat_id = get_id(update)
+        question = Question.objects.create(
+            user_id = chat_id,
+            text = (User.objects.filter(tg_id=chat_id).get()).question
+        )
+        bot.send_message(chat_id=chat_id, text='created')
+        menu(update)
+        return MENU
+
 
 def inline_callback_handler(update:Update, context: CallbackContext): # handles callbacks from inliane keyboard query   
     query = update.callback_query
@@ -116,21 +163,7 @@ def contact_reciever(update, context: CallbackContext): #gets phone number from 
         User.objects.filter(tg_id=chat_id).update(phone=phone)
         bot.send_message(chat_id=chat_id, text = get_phrase(update, 'successful_registration'))
         menu(update)
-        return ConversationHandler.END
-
-def menu(update: Update): # displays main menu to the user   
-    text = get_phrase(update, 'menu')
-    bot.send_message(chat_id=get_id(update), text=text, reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text=get_phrase(update, 'category_menu')),],
-                [KeyboardButton(text=get_phrase(update,'question_menu')),
-                 KeyboardButton(text=get_phrase(update,'chat_menu')),
-                 KeyboardButton(text=get_phrase(update,'info_menu')),
-                ]
-            ],
-            resize_keyboard=True,
-            one_time_keyboard=True,
-        )
-    )
+        return MENU
     
 
 # conversation handler for dispatcher
@@ -138,7 +171,10 @@ conversation_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],  
     states={
         NAME: [MessageHandler(Filters.text, ask_name),],
-        PHONE: [MessageHandler(Filters.text, ask_phone), MessageHandler(Filters.contact, contact_reciever)],   
+        PHONE: [MessageHandler(Filters.text, ask_phone), MessageHandler(Filters.contact, contact_reciever)],
+        MENU: [MessageHandler(Filters.text, message_handler)],
+        QUESTION: [MessageHandler(Filters.text, question), MessageHandler(Filters.text, message_handler)],
+        QUESTION_VERIFICATION: [MessageHandler(Filters.text, message_handler)],
         },
     fallbacks=[MessageHandler(Filters.command, start)],
     allow_reentry=True

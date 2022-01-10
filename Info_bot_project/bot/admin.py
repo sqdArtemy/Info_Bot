@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.db import models
-from bot.models import Category, Publication, Language, User
+from bot.models import Category, Publication, Language, User, Question
 
 
 @admin.register(Category)
@@ -21,3 +21,7 @@ class LanguageAdmin(admin.ModelAdmin):
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('tg_id', 'name', 'phone', 'language')
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'status', 'time')
