@@ -43,6 +43,9 @@ class Language(models.Model):
     check_question = models.TextField('Chek if question is correct', blank=True)
     yes = models.TextField('Yes',blank=True)
     no = models.TextField('No', blank=True)
+    answered_question = models.TextField('Your question have been answered', blank=True)
+    question = models.TextField('User`s question', blank=True)
+    answer = models.TextField('Answer to the question', blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -66,5 +69,3 @@ class Question(models.Model):
     status = models.BooleanField('Is question answered ?', default=False)
     answer = models.TextField('Answer to the question', blank=True, null=True)
     time = models.DateTimeField('Asked at:', auto_now_add=True)
-
-

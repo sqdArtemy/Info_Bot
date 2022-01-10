@@ -1,9 +1,10 @@
+from re import U
 from telegram import *
-from telegram import chat
-from telegram import keyboardbutton
 from telegram.ext import *
 from Info_bot_project.settings import TOKEN
 from bot.models import Language, User, Question
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
 bot = Bot(token=TOKEN)
 #conversation states
@@ -107,16 +108,20 @@ def menu(update: Update): # displays main menu to the user
 def question(update: Update,conext: CallbackContext): # proceeds user`s questions   
     chat_id = get_id(update)
     text = update.message.text
-    User.objects.filter(tg_id=chat_id).update(question=text)
-    update.message.reply_text(text=(get_phrase(update, 'check_question') + ' ' + text), reply_markup=ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(get_phrase(update, 'yes')), KeyboardButton(get_phrase(update, 'no'))],
-            [KeyboardButton(get_phrase(update, 'back'))],
-        ],
-        resize_keyboard=True
+    if text != get_phrase(update, 'back'):
+        User.objects.filter(tg_id=chat_id).update(question=text)
+        update.message.reply_text(text=(get_phrase(update, 'check_question') + ' ' + text), reply_markup=ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(get_phrase(update, 'yes')), KeyboardButton(get_phrase(update, 'no'))],
+                [KeyboardButton(get_phrase(update, 'back'))],
+            ],
+            resize_keyboard=True
+            )
         )
-    )
-    return QUESTION_VERIFICATION
+        return QUESTION_VERIFICATION
+    else:
+        menu(update)
+        return MENU
 
 def message_handler(update: Update, context: CallbackContext): # handles all messages from uses
     chat_id = get_id(update)
@@ -164,18 +169,28 @@ def contact_reciever(update, context: CallbackContext): #gets phone number from 
         bot.send_message(chat_id=chat_id, text = get_phrase(update, 'successful_registration'))
         menu(update)
         return MENU
-    
 
-# conversation handler for dispatcher
+
+# conversation handler with states for dispatcher
 conversation_handler = ConversationHandler( 
     entry_points=[CommandHandler('start', start)],  
     states={
         NAME: [MessageHandler(Filters.text, ask_name),],
         PHONE: [MessageHandler(Filters.text, ask_phone), MessageHandler(Filters.contact, contact_reciever)],
         MENU: [MessageHandler(Filters.text, message_handler)],
-        QUESTION: [MessageHandler(Filters.text, question), MessageHandler(Filters.text, message_handler)],
+        QUESTION: [MessageHandler(Filters.text, question)],
         QUESTION_VERIFICATION: [MessageHandler(Filters.text, message_handler)],
         },
     fallbacks=[MessageHandler(Filters.command, start)],
     allow_reentry=True
 )
+
+@receiver(post_save, sender=Question)
+def question_observe(sender, instance: Question, **kwargs):
+    question = instance
+    user_language = (User.objects.filter(tg_id=question.user_id).get()).language
+    language = Language.objects.filter(name=user_language).get()
+    if question.status == False and question.answer:
+        text = (language.answered_question + '\n'+ language.question + ' ' + question.text + '\n' + language.answer + ' ' + question.answer)
+        bot.send_message(chat_id=question.user_id, text=text)
+        Question.objects.filter(id=question.id).update(status=True)
