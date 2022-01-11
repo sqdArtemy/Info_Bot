@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models.base import Model
 from django.db.models.deletion import PROTECT
+from django.db.models.expressions import F
 from telegram import base
 
 
@@ -10,16 +11,6 @@ class Category(models.Model):
 
     def __str__(self) -> str:
         return f'{self.name}'
-
-
-class Publication(models.Model):
-    category = models.ForeignKey(Category, on_delete=PROTECT)
-    topic = models.TextField('Publication`s topic')
-    text = models.TextField('Pulication`s text')
-    link = models.CharField('Reference link', max_length=100, blank=True)
-
-    def __str__(self) -> str:
-        return f'{self.topic}'
 
 
 class Language(models.Model):
@@ -46,9 +37,25 @@ class Language(models.Model):
     answered_question = models.TextField('Your question have been answered', blank=True)
     question = models.TextField('User`s question', blank=True)
     answer = models.TextField('Answer to the question', blank=True)
+    question_created = models.TextField('Question was succesfully created', blank=True)
+    categories = models.TextField('Choose category', blank=True)
+    key_words = models.TextField('Write keyword in order t find ublication', blank=True)
+    reference_link = models.TextField('Link to the resource', blank=True)
+    posts_found = models.TextField('There are posts on your request', blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
+
+
+class Publication(models.Model):
+    category = models.ForeignKey(Category, on_delete=PROTECT)
+    topic = models.TextField('Publication`s topic')
+    text = models.TextField('Pulication`s text')
+    link = models.CharField('Reference link', max_length=100, blank=True)
+    language = models.ForeignKey(Language, on_delete=PROTECT)
+
+    def __str__(self) -> str:
+        return f'{self.topic}'
 
 
 class User(models.Model):
@@ -69,3 +76,14 @@ class Question(models.Model):
     status = models.BooleanField('Is question answered ?', default=False)
     answer = models.TextField('Answer to the question', blank=True, null=True)
     time = models.DateTimeField('Asked at:', auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f'{self.id}'
+
+
+class KeyWord(models.Model):
+    publication = models.ForeignKey(Publication, on_delete=PROTECT)
+    word = models.TextField('Keyword')
+
+    def __str__(self) -> str:
+        return f'{self.word}'

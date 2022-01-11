@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.db import models
-from bot.models import Category, Publication, Language, User, Question
+from bot.models import Category, Publication, Language, User, Question, KeyWord
 
+class InlineKeyword(admin.StackedInline):
+    model = KeyWord
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -10,7 +12,8 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Publication)
 class PublicationAdmmin(admin.ModelAdmin):
-    list_display = ('category', 'topic',)
+    list_display = ('category', 'topic', 'language')
+    inlines = [InlineKeyword]
 
 
 @admin.register(Language)

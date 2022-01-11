@@ -1,29 +1,28 @@
-from re import U
 from telegram import *
 from telegram.ext import *
 from Info_bot_project.settings import TOKEN
-from bot.models import Language, User, Question
+from bot.models import Language, User, Question, Category, Publication, KeyWord
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 
 bot = Bot(token=TOKEN)
 #conversation states
-NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION = range(5)
+NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION, CATEGORY, KEY_WORDS = range(7)
 
 def get_id(update: Update): # returns user`s id 
     try: return update.effective_message.chat_id
     except: raise IndexError
 
-def get_item(update: Update, id, option, type): # returns nedeed user`s attribute from DB
+def get_item(update: Update, option, type): # returns nedeed user`s attribute from DB
     try:
-        object = type.objects.filter(tg_id=id).get()
+        object = type.objects.filter(tg_id=get_id(update)).get()
         field_object = type._meta.get_field(str(option))
         return getattr(object, field_object.attname)
     except:
         raise ValueError
 
 def get_language(update: Update): # returns language selected by user
-    return get_item(update, get_id(update), 'language', User)
+    return get_item(update, 'language', User)
 
 def get_phrase(update: Update, option): # returns particular phrase on a selected language
     try:
@@ -126,9 +125,10 @@ def question(update: Update,conext: CallbackContext): # proceeds user`s question
 def message_handler(update: Update, context: CallbackContext): # handles all messages from uses
     chat_id = get_id(update)
     text = update.message.text
+    back_button = [KeyboardButton(text=get_phrase(update, 'back'))]
     if text == get_phrase(update, 'info_menu'):
         update.message.reply_text(text=get_phrase(update, 'info'), 
-        reply_markup=ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=get_phrase(update, 'back'))]],resize_keyboard=True)
+        reply_markup=ReplyKeyboardMarkup(keyboard=[back_button],resize_keyboard=True)
         )
     elif text == get_phrase(update, 'back'):
         menu(update)
@@ -137,7 +137,7 @@ def message_handler(update: Update, context: CallbackContext): # handles all mes
         menu(update)
     elif text == get_phrase(update, 'question_menu') or text == get_phrase(update, 'no'):
         update.message.reply_text(text=get_phrase(update, 'ask_question'), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(get_phrase(update, 'back'))]],
+            keyboard=[back_button],
             resize_keyboard=True
             )
         )
@@ -148,10 +148,32 @@ def message_handler(update: Update, context: CallbackContext): # handles all mes
             user_id = chat_id,
             text = (User.objects.filter(tg_id=chat_id).get()).question
         )
-        bot.send_message(chat_id=chat_id, text='created')
+        bot.send_message(chat_id=chat_id, text=get_phrase(update, 'question_created'))
         menu(update)
         return MENU
-
+    elif text == get_phrase(update, 'category_menu'):
+        categories = Category.objects.all()
+        category_buttons = []
+        for category in categories:
+            category_buttons.append(KeyboardButton(category.name))
+        update.message.reply_text(text=get_phrase(update, 'categories'), reply_markup=ReplyKeyboardMarkup(
+            keyboard=[category_buttons, back_button],
+            resize_keyboard=True,
+            )
+        )
+        return CATEGORY
+    else:
+        categories = Category.objects.all()
+        for category in categories:
+            if text == category.name:
+                User.objects.filter(tg_id=get_id(update)).update(chosen_category=category.id)
+                update.message.reply_text(text=(get_phrase(update,'key_words') + ' ' + category.name + ':'), 
+                    reply_markup=ReplyKeyboardMarkup(
+                        keyboard=[back_button],
+                        resize_keyboard=True,
+                    )
+                )
+        return KEY_WORDS
 
 def inline_callback_handler(update:Update, context: CallbackContext): # handles callbacks from inliane keyboard query   
     query = update.callback_query
@@ -162,13 +184,28 @@ def inline_callback_handler(update:Update, context: CallbackContext): # handles 
         User.objects.filter(tg_id=chat_id).update(language=data)
         query.edit_message_text(text=get_phrase(update, 'language_set'))
 
-def contact_reciever(update, context: CallbackContext): #gets phone number from user`s contact
-        chat_id = get_id(update)
-        phone = (update.effective_message.contact).phone_number
-        User.objects.filter(tg_id=chat_id).update(phone=phone)
-        bot.send_message(chat_id=chat_id, text = get_phrase(update, 'successful_registration'))
-        menu(update)
-        return MENU
+def contact_reciever(update: Update, context: CallbackContext): #gets phone number from user`s contact
+    chat_id = get_id(update)
+    phone = (update.effective_message.contact).phone_number
+    User.objects.filter(tg_id=chat_id).update(phone=phone)
+    bot.send_message(chat_id=chat_id, text = get_phrase(update, 'successful_registration'))
+    menu(update)
+    return MENU
+
+def post_finder(update: Update, context: CallbackContext): # finds all posts wich have same keywords with user`s keywords
+    text = update.message.text
+    user_keywords = text.split(' ')
+    publications = Publication.objects.filter(language=get_item(update,'language', User), category=get_item(update, 'chosen_category', User))
+    if publications:
+        update.message.reply_text(text=get_phrase(update, 'posts_found'))
+        for publication in publications:
+            keywords = KeyWord.objects.filter(publication=publication.id)
+            for keyword in keywords:
+                if keyword.word in user_keywords:
+                    text = publication.topic + '\n\n' + publication.text + '\n' + get_phrase(update, 'reference_link') + ' ' + publication.link
+                    update.message.reply_text(text = text)
+    else:
+        pass
 
 
 # conversation handler with states for dispatcher
@@ -180,17 +217,22 @@ conversation_handler = ConversationHandler(
         MENU: [MessageHandler(Filters.text, message_handler)],
         QUESTION: [MessageHandler(Filters.text, question)],
         QUESTION_VERIFICATION: [MessageHandler(Filters.text, message_handler)],
+        CATEGORY: [MessageHandler(Filters.text, message_handler)],
+        KEY_WORDS: [MessageHandler(Filters.text, post_finder)],
         },
     fallbacks=[MessageHandler(Filters.command, start)],
     allow_reentry=True
 )
 
-@receiver(post_save, sender=Question)
+@receiver(post_save, sender=Question) # cheks if question was answered
 def question_observe(sender, instance: Question, **kwargs):
-    question = instance
-    user_language = (User.objects.filter(tg_id=question.user_id).get()).language
-    language = Language.objects.filter(name=user_language).get()
-    if question.status == False and question.answer:
-        text = (language.answered_question + '\n'+ language.question + ' ' + question.text + '\n' + language.answer + ' ' + question.answer)
-        bot.send_message(chat_id=question.user_id, text=text)
-        Question.objects.filter(id=question.id).update(status=True)
+    try:
+        question = instance
+        user_language = (User.objects.filter(tg_id=question.user_id).get()).language
+        language = Language.objects.filter(name=user_language).get()
+        if question.status == False and question.answer:
+            text = (language.answered_question + '\n'+ language.question + ' ' + question.text + '\n' + language.answer + ' ' + question.answer)
+            bot.send_message(chat_id=question.user_id, text=text)
+            Question.objects.filter(id=question.id).update(status=True)
+    except: 
+        raise ValueError
