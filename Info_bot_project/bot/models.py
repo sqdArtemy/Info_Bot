@@ -42,6 +42,7 @@ class Language(models.Model):
     key_words = models.TextField('Write keyword in order t find ublication', blank=True)
     reference_link = models.TextField('Link to the resource', blank=True)
     posts_found = models.TextField('There are posts on your request', blank=True)
+    no_posts = models.TextField('There are no posts', blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -87,3 +88,8 @@ class KeyWord(models.Model):
 
     def __str__(self) -> str:
         return f'{self.word}'
+
+class Link(models.Model):
+    name = models.CharField('Name of link', max_length=100)
+    link = models.CharField('Link itself', max_length=100)
+    
