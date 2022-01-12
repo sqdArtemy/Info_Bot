@@ -43,6 +43,8 @@ class Language(models.Model):
     reference_link = models.TextField('Link to the resource', blank=True)
     posts_found = models.TextField('There are posts on your request', blank=True)
     no_posts = models.TextField('There are no posts', blank=True)
+    numbers_name = models.TextField('There are numbers in name', blank=True)
+    incorrect_phone = models.TextField('Phone was inputed inproperly!', blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'

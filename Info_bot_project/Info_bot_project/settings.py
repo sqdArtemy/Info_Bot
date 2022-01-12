@@ -129,4 +129,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TOKEN = '5091830633:AAEY9G4_aQ8pWuIkbgG64hEhZTNy2K1IQ4A'
 
 # Server`s url
-URL = 'https://6638-213-230-127-84.ngrok.io/'
+URL = 'https://0715-213-230-127-84.ngrok.io/'

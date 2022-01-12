@@ -1,15 +1,14 @@
 from rest_framework.views import APIView
 import os
-from telegram import update
-from telegram.ext.commandhandler import CommandHandler
 from django.http import JsonResponse
 from telegram.ext.messagehandler import MessageHandler
-from bot.bot import message_handler, inline_callback_handler
+from bot.bot import message_handler
 from Info_bot_project.settings import TOKEN, URL
 from telegram.ext import Updater, Dispatcher
 from telegram import *
 from telegram.ext import *
 from bot.bot import conversation_handler
+import pytz
 
 
 class BotView(APIView):
@@ -17,7 +16,8 @@ class BotView(APIView):
         try:
             PORT = int(os.environ.get('PORT', '8000'))
             bot = Bot(token=TOKEN)
-            updater = Updater(bot=bot, use_context=True)
+            defaults = Defaults(parse_mode=ParseMode.MARKDOWN, tzinfo=pytz.timezone('Asia/Tashkent'))
+            updater = Updater(bot=bot, use_context=True, defaults=defaults)
 
             bot.setWebhook(URL + 'info_bot/')
             updater.start_webhook(listen='0.0.0.0',
@@ -34,8 +34,6 @@ class BotView(APIView):
             bot = Bot(token=TOKEN)
             dispatcher = Dispatcher(bot, None, workers=6)
             dispatcher.add_handler(conversation_handler)
-            dispatcher.add_handler(CallbackQueryHandler(callback=inline_callback_handler))
-            dispatcher.add_handler(MessageHandler(Filters.text, callback=message_handler))
             dispatcher.process_update(Update.de_json(request.data, bot))
             return JsonResponse({"ok": "POST request processed"})
         except:

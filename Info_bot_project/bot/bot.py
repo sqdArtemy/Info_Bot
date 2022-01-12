@@ -7,7 +7,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 
 bot = Bot(token=TOKEN) # telegram bot 
-NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION, CATEGORY, KEY_WORDS = range(7) #conversation states
+LANGUAGE, NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION, CATEGORY, KEY_WORDS = range(8) #conversation states
 
 def get_id(update: Update): # returns user`s id 
     try: return update.effective_message.chat_id
@@ -57,27 +57,35 @@ def ask_name(update: Update, context: CallbackContext): # recieves name from use
     try: 
         chat_id=get_id(update)
         text = update.effective_message.text
-        User.objects.filter(tg_id=chat_id).update(name=text)
-        
-        bot.send_message(chat_id=chat_id, # sends message with inline keyboard asking for a phone number 
-            text=get_phrase(update, 'phone_ask'),
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard=[[KeyboardButton(text=get_phrase(update,'send_contact'), request_contact=True)]],
-                resize_keyboard=True,
-                one_time_keyboard=True,
-            )
-        )   
-        return PHONE
+        if not any(map(str.isdigit, text)):
+            User.objects.filter(tg_id=chat_id).update(name=text)
+            
+            bot.send_message(chat_id=chat_id, # sends message with inline keyboard asking for a phone number 
+                text=get_phrase(update, 'phone_ask'),
+                reply_markup=ReplyKeyboardMarkup(
+                    keyboard=[[KeyboardButton(text=get_phrase(update,'send_contact'), request_contact=True)]],
+                    resize_keyboard=True,
+                    one_time_keyboard=True,
+                )
+            )   
+            return PHONE
+        else:
+            update.message.reply_text(text=get_phrase(update, 'numbers_name'))
     except: raise ValueError
 
 def ask_phone(update: Update, context: CallbackContext): # recieves phone from user 
     try:
         text = update.effective_message.text
-        chat_id = get_id(update)
-        User.objects.filter(tg_id=chat_id).update(phone=text)
-        bot.send_message(chat_id=chat_id, text = get_phrase(update, 'successful_registration'))
-        menu(update)
-        return MENU
+        text = text[text.find('+')+1:]
+        codes = ['33','55','77','88','90','91','93','94','95','97','98','99']
+        if(any(map(str.isdecimal, text)) and len(text)==12 and (text[3:5] in codes)):
+            chat_id = get_id(update)
+            User.objects.filter(tg_id=chat_id).update(phone=text)
+            bot.send_message(chat_id=chat_id, text = get_phrase(update, 'successful_registration'))
+            menu(update)
+            return MENU
+        else:
+            update.message.reply_text(text=get_phrase(update, 'incorrect_phone'))
     except:
         raise IndexError
 
@@ -87,7 +95,7 @@ def start(update: Update,context: CallbackContext, *args, **kwargs,): # greets u
         user_maker(chat_id)
         bot.send_message(chat_id=chat_id, text=get_phrase(update, 'greetings'), reply_markup=ReplyKeyboardRemove())
         bot.send_message(chat_id=chat_id, text=get_phrase(update, 'language_selection'), reply_markup=inline_keyboard(update, 'language'))
-        return NAME
+        return LANGUAGE
     except:
         raise IndexError
 
@@ -166,18 +174,27 @@ def message_handler(update: Update, context: CallbackContext): # handles all mes
             )
         )
         return CATEGORY
-    else:
+
+def category_handler(update: Update, context: CallbackContext):
+    try:
+        text = update.message.text
+    except: raise ValueError
+    try:
         categories = Category.objects.all()
         for category in categories:
             if text == category.name:
                 User.objects.filter(tg_id=get_id(update)).update(chosen_category=category.id)
                 update.message.reply_text(text=('').join([get_phrase(update,'key_words'), ' ', category.name, ':']),
                     reply_markup=ReplyKeyboardMarkup(
-                        keyboard=[back_button],
+                        keyboard=[[KeyboardButton(text=get_phrase(update, 'back'))]],
                         resize_keyboard=True,
                     )
                 )
         return KEY_WORDS
+    except:
+        raise TypeError
+
+
 
 def inline_callback_handler(update:Update, context: CallbackContext): # handles callbacks from inliane keyboard query   
     query = update.callback_query
@@ -187,6 +204,7 @@ def inline_callback_handler(update:Update, context: CallbackContext): # handles 
         bot.send_message(chat_id=get_id(update), text=get_phrase(update, 'name_ask'))
         User.objects.filter(tg_id=chat_id).update(language=data)
         query.edit_message_text(text=get_phrase(update, 'language_set'))
+        return NAME
 
 def contact_reciever(update: Update, context: CallbackContext): #gets phone number from user`s contact
     chat_id = get_id(update)
@@ -237,17 +255,19 @@ def post_finder(update: Update, context: CallbackContext): # finds all posts wic
 conversation_handler = ConversationHandler( 
     entry_points=[CommandHandler('start', start)],  
     states={
+        LANGUAGE:[CallbackQueryHandler(callback=inline_callback_handler)],
         NAME: [MessageHandler(Filters.text, ask_name),],
         PHONE: [MessageHandler(Filters.text, ask_phone), MessageHandler(Filters.contact, contact_reciever)],
         MENU: [MessageHandler(Filters.text, message_handler)],
         QUESTION: [MessageHandler(Filters.text, question)],
         QUESTION_VERIFICATION: [MessageHandler(Filters.text, message_handler)],
-        CATEGORY: [MessageHandler(Filters.text, message_handler)],
+        CATEGORY: [MessageHandler(Filters.text, category_handler)],
         KEY_WORDS: [MessageHandler(Filters.text, post_finder)],
         },
     fallbacks=[MessageHandler(Filters.command, start)],
     allow_reentry=True,
 )
+
 
 @receiver(post_save, sender=Question) # cheks if question was answered
 def question_observe(sender, instance: Question, **kwargs):
