@@ -1,13 +1,9 @@
 from django.db import models
-from django.db.models.base import Model
-from django.db.models.deletion import PROTECT
-from django.db.models.expressions import F
-from telegram import base
+from django.db.models.deletion import CASCADE, PROTECT, SET, SET_NULL
 
 
 class Category(models.Model):
     name = models.CharField('Category_name', max_length=50, unique=True)
-    gender = models.CharField('For Gender', max_length=50)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -15,6 +11,7 @@ class Category(models.Model):
 
 class Language(models.Model):
     name = models.CharField('Language name', max_length=100, unique=True)
+    code = models.CharField('Language code', max_length=10, blank=True)
     greetings = models.TextField('Greeting message', blank=True)
     name_ask = models.TextField('Asking for a name', blank=True)
     phone_ask = models.TextField('Asking for a phone', blank=True)
@@ -39,26 +36,43 @@ class Language(models.Model):
     answer = models.TextField('Answer to the question', blank=True)
     question_created = models.TextField('Question was succesfully created', blank=True)
     categories = models.TextField('Choose category', blank=True)
-    key_words = models.TextField('Write keyword in order t find ublication', blank=True)
+    key_words = models.TextField('Write keyword in order to find publication', blank=True)
     reference_link = models.TextField('Link to the resource', blank=True)
     posts_found = models.TextField('There are posts on your request', blank=True)
     no_posts = models.TextField('There are no posts', blank=True)
     numbers_name = models.TextField('There are numbers in name', blank=True)
     incorrect_phone = models.TextField('Phone was inputed inproperly!', blank=True)
+    video = models.TextField('Video-instruction', blank=True)
+    video_text = models.TextField('Here is the link to the video', blank=True)
+    select_poll = models.TextField('Select poll', blank=True)
+    no_polls = models.TextField('There are no polls', blank=True)
+    poll_button = models.TextField('"Select poll" buton', blank=True)
+    selected_category = models.TextField('Menu for category', blank=True)
+    find = models.TextField('Find posts', blank=True)
+    
 
     def __str__(self) -> str:
         return f'{self.name}'
 
 
 class Publication(models.Model):
-    category = models.ForeignKey(Category, on_delete=PROTECT)
-    topic = models.TextField('Publication`s topic')
-    text = models.TextField('Pulication`s text')
-    link = models.CharField('Reference link', max_length=100, blank=True)
-    language = models.ForeignKey(Language, on_delete=PROTECT)
+    category = models.ForeignKey(Category, on_delete=SET_NULL, blank=True, null=True)
+    topic = models.TextField('Publication`s topic', blank=True, null=True)
+    text = models.TextField('Pulication`s text', blank=True)
+    link = models.CharField('Reference link', max_length=100, blank=True, null=True)
+    language = models.ForeignKey(Language, on_delete=PROTECT, blank=True, null=True)
 
     def __str__(self) -> str:
         return f'{self.topic}'
+
+
+class Questionnaire(models.Model):
+    category = models.ForeignKey(Category, on_delete=SET_NULL, null=True, blank=True)
+    name = models.TextField('Name of the questionnaire', unique=True)
+    answers = models.TextField('Table with answer-points')
+
+    def __str__(self) -> str:
+        return f'{self.name}'
 
 
 class User(models.Model):
@@ -66,8 +80,9 @@ class User(models.Model):
     name = models.CharField('User`s name', max_length=100, blank=True, null=True)
     phone = models.CharField('User`s phone', max_length=100, blank=True, null=True)
     language = models.ForeignKey(Language, on_delete=PROTECT, default=1)
-    chosen_category = models.ForeignKey(Category, on_delete=PROTECT, blank=True, null=True)
+    chosen_category = models.ForeignKey(Category, on_delete=SET_NULL, blank=True, null=True)
     question = models.TextField('User`s question', blank=True, null=True)
+    poll = models.ForeignKey(Questionnaire, on_delete=SET_NULL, blank=True, null=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -94,4 +109,22 @@ class KeyWord(models.Model):
 class Link(models.Model):
     name = models.CharField('Name of link', max_length=100)
     link = models.CharField('Link itself', max_length=100)
+    category = models.ForeignKey(Category, on_delete=SET_NULL, blank=True, null=True)
+
+    def __str__(self) -> str:
+        return f'{self.name}'
+
+
+class QuestionPoll(models.Model):
+    questionnaire = models.ForeignKey(Questionnaire, on_delete=CASCADE, null=True)
+    text = models.TextField('Text of the question')
+
+
+class Answer(models.Model):
+    questionnaire = models.ForeignKey(Questionnaire, on_delete=CASCADE, null=True)
+    question = models.ForeignKey(QuestionPoll, on_delete=CASCADE, null=True)
+    text = models.TextField('Text of the answer')
+    points = models.IntegerField('Number of points for answer', null=True)
+
+
     

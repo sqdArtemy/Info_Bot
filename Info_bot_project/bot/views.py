@@ -1,8 +1,6 @@
 from rest_framework.views import APIView
 import os
 from django.http import JsonResponse
-from telegram.ext.messagehandler import MessageHandler
-from bot.bot import message_handler
 from Info_bot_project.settings import TOKEN, URL
 from telegram.ext import Updater, Dispatcher
 from telegram import *
@@ -32,7 +30,7 @@ class BotView(APIView):
     def post(self, request, *args, **options):
         try:
             bot = Bot(token=TOKEN)
-            dispatcher = Dispatcher(bot, None, workers=6)
+            dispatcher = Dispatcher(bot, None, workers=8)
             dispatcher.add_handler(conversation_handler)
             dispatcher.process_update(Update.de_json(request.data, bot))
             return JsonResponse({"ok": "POST request processed"})

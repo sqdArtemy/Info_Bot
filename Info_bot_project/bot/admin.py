@@ -1,14 +1,17 @@
 from django.contrib import admin
-from bot.models import Category, Publication, Language, User, Question, KeyWord, Link
+from bot.models import Category, Publication, Language, User, Question, KeyWord, Link, Questionnaire, Answer, QuestionPoll
 
 
 class InlineKeyword(admin.StackedInline):
     model = KeyWord
 
+class InlineAnswer(admin.StackedInline):
+    model = Answer
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_dispaly = ('name', 'gender',)
+    list_dispaly = ('name', 'gender',),
 
 
 @admin.register(Publication)
@@ -35,3 +38,14 @@ class QuestionAdmin(admin.ModelAdmin):
 @admin.register(Link)
 class LinkAdmin(admin.ModelAdmin):
     list_display = ('name', 'link')
+
+
+@admin.register(Questionnaire)
+class QuestionnaireAdmin(admin.ModelAdmin):
+    list_display = ('category', 'name')
+
+
+@admin.register(QuestionPoll)
+class QuestionPollAdmin(admin.ModelAdmin):
+    list_display = ('questionnaire', 'text')
+    inlines = [InlineAnswer]

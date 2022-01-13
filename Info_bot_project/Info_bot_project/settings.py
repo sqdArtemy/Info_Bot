@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    'modeltranslation',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -105,8 +106,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
+LANGUAGES = (
+    ('ru', ('Russian')),
+    ('uz', ('Uzbek')),
+)
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
+
+LANGUAGE_BIDI = ['ru', 'uz']
 
 TIME_ZONE = 'Asia/Tashkent'
 
@@ -126,7 +133,12 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Telegram bot token 
-TOKEN = '5091830633:AAEY9G4_aQ8pWuIkbgG64hEhZTNy2K1IQ4A'
+TOKEN = '5091830633:AAHwGC-HNt7tvXuFOIal51fu5XjvtznZYTM'
 
 # Server`s url
-URL = 'https://0715-213-230-127-84.ngrok.io/'
+URL = 'https://cfe9-213-230-127-84.ngrok.io/'
+
+# Model translation
+MODELTRANSLATION_TRANSLATION_FILES = (
+    'bot.translation',
+)
