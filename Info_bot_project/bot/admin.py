@@ -1,3 +1,4 @@
+from dataclasses import field
 from django.contrib import admin
 from bot.models import Category, Publication, Language, User, Question, KeyWord, Link, Questionnaire, Answer, QuestionPoll
 
@@ -5,8 +6,9 @@ from bot.models import Category, Publication, Language, User, Question, KeyWord,
 class InlineKeyword(admin.StackedInline):
     model = KeyWord
 
-class InlineAnswer(admin.StackedInline):
+class InlineAnswer(admin.TabularInline):
     model = Answer
+    fields = ('questionnaire', 'question', 'text', 'points')
 
 
 @admin.register(Category)

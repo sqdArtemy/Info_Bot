@@ -136,7 +136,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TOKEN = '5091830633:AAHwGC-HNt7tvXuFOIal51fu5XjvtznZYTM'
 
 # Server`s url
-URL = 'https://cfe9-213-230-127-84.ngrok.io/'
+URL = 'https://9570-213-230-127-84.ngrok.io/'
 
 # Model translation
 MODELTRANSLATION_TRANSLATION_FILES = (

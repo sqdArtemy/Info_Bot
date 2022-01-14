@@ -1,3 +1,4 @@
+from pyexpat import model
 from django.db import models
 from django.db.models.deletion import CASCADE, PROTECT, SET, SET_NULL
 
@@ -49,18 +50,23 @@ class Language(models.Model):
     poll_button = models.TextField('"Select poll" buton', blank=True)
     selected_category = models.TextField('Menu for category', blank=True)
     find = models.TextField('Find posts', blank=True)
-    
+    points = models.TextField('Points for answer', blank=True)
+    results = models.TextField('Results of poll', blank=True)
+    poll_selected = models.TextField('Questionnaire have been selected', blank=True)
+    back_category = models.TextField('Back to categories', blank=True)
+    anonymous = models.TextField('"Stay Anonymous" button', blank=True)
+    skip = models.TextField('"Skip" button', blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
 
 
 class Publication(models.Model):
-    category = models.ForeignKey(Category, on_delete=SET_NULL, blank=True, null=True)
-    topic = models.TextField('Publication`s topic', blank=True, null=True)
+    category = models.ForeignKey(Category, on_delete=CASCADE)
+    topic = models.CharField('Publication`s topic', max_length=256)
     text = models.TextField('Pulication`s text', blank=True)
-    link = models.CharField('Reference link', max_length=100, blank=True, null=True)
-    language = models.ForeignKey(Language, on_delete=PROTECT, blank=True, null=True)
+    link = models.CharField('Reference link', max_length=100)
+    language = models.ForeignKey(Language, on_delete=PROTECT)
 
     def __str__(self) -> str:
         return f'{self.topic}'
@@ -68,7 +74,7 @@ class Publication(models.Model):
 
 class Questionnaire(models.Model):
     category = models.ForeignKey(Category, on_delete=SET_NULL, null=True, blank=True)
-    name = models.TextField('Name of the questionnaire', unique=True)
+    name = models.CharField('Name of the questionnaire',max_length=256, unique=True)
     answers = models.TextField('Table with answer-points')
 
     def __str__(self) -> str:
@@ -83,6 +89,7 @@ class User(models.Model):
     chosen_category = models.ForeignKey(Category, on_delete=SET_NULL, blank=True, null=True)
     question = models.TextField('User`s question', blank=True, null=True)
     poll = models.ForeignKey(Questionnaire, on_delete=SET_NULL, blank=True, null=True)
+    is_anonymous = models.BooleanField('Is user anonymous?', default=False)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -101,7 +108,7 @@ class Question(models.Model):
 
 class KeyWord(models.Model):
     publication = models.ForeignKey(Publication, on_delete=PROTECT)
-    word = models.TextField('Keyword')
+    word = models.CharField('Keyword', max_length=256)
 
     def __str__(self) -> str:
         return f'{self.word}'
@@ -123,7 +130,7 @@ class QuestionPoll(models.Model):
 class Answer(models.Model):
     questionnaire = models.ForeignKey(Questionnaire, on_delete=CASCADE, null=True)
     question = models.ForeignKey(QuestionPoll, on_delete=CASCADE, null=True)
-    text = models.TextField('Text of the answer')
+    text = models.CharField('Text of the answer', max_length=256)
     points = models.IntegerField('Number of points for answer', null=True)
 
 

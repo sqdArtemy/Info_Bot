@@ -14,8 +14,7 @@ class BotView(APIView):
         try:
             PORT = int(os.environ.get('PORT', '8000'))
             bot = Bot(token=TOKEN)
-            defaults = Defaults(parse_mode=ParseMode.MARKDOWN, tzinfo=pytz.timezone('Asia/Tashkent'))
-            updater = Updater(bot=bot, use_context=True, defaults=defaults)
+            updater = Updater(bot=bot, use_context=True)
 
             bot.setWebhook(URL + 'info_bot/')
             updater.start_webhook(listen='0.0.0.0',
@@ -29,7 +28,8 @@ class BotView(APIView):
 
     def post(self, request, *args, **options):
         try:
-            bot = Bot(token=TOKEN)
+            defaults = Defaults(tzinfo=pytz.timezone('Asia/Tashkent'))
+            bot = Bot(token=TOKEN, defaults=defaults)
             dispatcher = Dispatcher(bot, None, workers=8)
             dispatcher.add_handler(conversation_handler)
             dispatcher.process_update(Update.de_json(request.data, bot))
