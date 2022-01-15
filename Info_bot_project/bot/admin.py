@@ -1,6 +1,6 @@
 from dataclasses import field
 from django.contrib import admin
-from bot.models import Category, Publication, Language, User, Question, KeyWord, Link, Questionnaire, Answer, QuestionPoll
+from bot.models import Category, Publication, Language, User, Question, KeyWord, Link, Questionnaire, Answer, QuestionPoll, Suggestion
 
 
 class InlineKeyword(admin.StackedInline):
@@ -51,3 +51,8 @@ class QuestionnaireAdmin(admin.ModelAdmin):
 class QuestionPollAdmin(admin.ModelAdmin):
     list_display = ('questionnaire', 'text')
     inlines = [InlineAnswer]
+
+
+@admin.register(Suggestion)
+class SuggestionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user_id', 'text')

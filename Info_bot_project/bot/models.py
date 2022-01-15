@@ -56,6 +56,9 @@ class Language(models.Model):
     back_category = models.TextField('Back to categories', blank=True)
     anonymous = models.TextField('"Stay Anonymous" button', blank=True)
     skip = models.TextField('"Skip" button', blank=True)
+    suggestion = models.TextField('"Add suggestion" button', blank=True)
+    thanks_suggestion = models.TextField('Thanks for suggestion!', blank=True)
+    write_suggestion = models.TextField('Write your suggestion', blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -134,4 +137,6 @@ class Answer(models.Model):
     points = models.IntegerField('Number of points for answer', null=True)
 
 
-    
+class Suggestion(models.Model):
+    text = models.TextField('Text of suggestion')
+    user_id = models.CharField('Telegram if of the user', max_length=100)

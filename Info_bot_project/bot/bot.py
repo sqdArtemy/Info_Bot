@@ -2,14 +2,14 @@ from telegram import *
 from telegram.ext import *
 import telegram
 from Info_bot_project.settings import TOKEN
-from bot.models import Language, User, Question, Category, Publication, KeyWord, Link, Questionnaire, QuestionPoll, Answer
+from bot.models import Language, User, Question, Category, Publication, KeyWord, Link, Questionnaire, QuestionPoll, Answer, Suggestion
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.utils.translation import activate
 
 
 bot = Bot(token=TOKEN) # telegram bot 
-LANGUAGE, NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION, CATEGORY, KEY_WORDS, POLL_HANDLER, POLL = range(10) #conversation states
+LANGUAGE, NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION, CATEGORY, KEY_WORDS, POLL_HANDLER, POLL, SUGGESTION = range(11) #conversation states
 
 
 def get_id(update: Update): # returns user`s id 
@@ -152,6 +152,7 @@ def menu(update: Update): # displays main menu to the user
                 [KeyboardButton(text=get_phrase(update,'question_menu')),
                  KeyboardButton(text=get_phrase(update,'chat_menu')),
                  KeyboardButton(text=get_phrase(update,'info_menu')),
+                 KeyboardButton(text=get_phrase(update, 'suggestion'))
                 ]
             ],
             resize_keyboard=True,
@@ -313,6 +314,19 @@ def poll_handler(update: Update, context: CallbackContext): #handles answers fo 
     query.edit_message_text(text=(''.join([get_phrase(update, 'points'), ' ', str(answer.points)])))
 
 
+def suggestion_handler(update: Update, context: CallbackContext):
+    text = update.message.text
+    if text != get_phrase(update, 'back'):
+        suggestion = Suggestion.objects.create(
+            text = text,
+            user_id = get_id(update),
+        )
+        update.message.reply_text(text=get_phrase(update, 'thanks_suggestion'))
+    else:
+        menu(update)
+    return MENU
+
+
 def message_handler(update: Update, context: CallbackContext): # handles all messages from user
     chat_id = get_id(update)
     try:
@@ -338,6 +352,13 @@ def message_handler(update: Update, context: CallbackContext): # handles all mes
             )
         )
         return QUESTION
+    elif text == get_phrase(update, 'suggestion'):
+        update.message.reply_text(text=get_phrase(update, 'write_suggestion'), reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[back_button]], 
+            resize_keyboard=True,
+            )
+        )
+        return SUGGESTION
     elif text == get_phrase(update, 'yes'):
         chat_id = get_id(update)
         question = Question.objects.create(
@@ -402,6 +423,7 @@ conversation_handler = ConversationHandler(
         CATEGORY: [MessageHandler(Filters.text, category_handler)],
         POLL:[MessageHandler(Filters.text, polls_selection)],
         KEY_WORDS: [MessageHandler(Filters.text, post_finder)],
+        SUGGESTION: [MessageHandler(Filters.text, suggestion_handler)],
         POLL_HANDLER: [CallbackQueryHandler(callback=poll_handler),MessageHandler(Filters.text, message_handler)]
         },
     fallbacks=[MessageHandler(Filters.command, start)],
