@@ -1,4 +1,5 @@
-from bot.models import Category, QuestionPoll, Answer
+from dataclasses import field
+from bot.models import Category, QuestionPoll, Answer, Questionnaire
 from modeltranslation.translator import TranslationOptions, register
 
 @register(Category)
@@ -14,3 +15,7 @@ class QuestionPollTranslationOption(TranslationOptions):
 @register(Answer)
 class AnswerTranslationOption(TranslationOptions):
     fields = ('text', )
+
+@register(Questionnaire)
+class QuestionnaireTranslationOption(TranslationOptions):
+    fields = ('name', 'answers')

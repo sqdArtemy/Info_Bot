@@ -8,7 +8,7 @@ class InlineKeyword(admin.StackedInline):
 
 class InlineAnswer(admin.TabularInline):
     model = Answer
-    fields = ('questionnaire', 'question', 'text', 'points')
+    fields = ('questionnaire', 'question', 'text_uz', 'text_ru', 'points')
 
 
 @admin.register(Category)
