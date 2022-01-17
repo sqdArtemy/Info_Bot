@@ -70,6 +70,7 @@ class Language(models.Model):
     incorrect_data = models.CharField('Input is incorrect', max_length=256, blank=True)
     yes = models.CharField('yes', max_length=256, blank=True)
     no = models.CharField('no', max_length=256, blank=True)
+    final_score = models.CharField('User`s score for poll', max_length=256, blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -89,8 +90,9 @@ class Publication(models.Model):
 class Questionnaire(models.Model):
     category = models.ForeignKey(Category, on_delete=SET_NULL, null=True, blank=True)
     name = models.CharField('Name of the questionnaire',max_length=256, unique=True)
-    number_answers = models.PositiveIntegerField('Number of questions', default=5)
+    question_amount = models.IntegerField('Amount of questions', default=5)
     answers = models.TextField('Table with answer-points')
+    number_answers = models.PositiveIntegerField('Number of question', blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'

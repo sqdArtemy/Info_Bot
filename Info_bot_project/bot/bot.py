@@ -1,5 +1,3 @@
-from dataclasses import field
-from logging import Filter
 from telegram import *
 from telegram.ext import *
 import telegram
@@ -293,24 +291,45 @@ def category_handler(update: Update, context: CallbackContext): # checks if cate
 
 def polls_selection(update: Update, context: CallbackContext): # sends questions of the questionnaire and then displaying results  
     text = update.message.text
-    if text != get_phrase(update, 'back'):
+    back = get_phrase(update, 'back')
+    if text != back:
         chat_id = get_id(update)
-        poll = Questionnaire.objects.filter(name=text).get()
-        User.objects.filter(tg_id=get_id(update)).update(poll=poll)
-        questions = QuestionPoll.objects.filter(questionnaire=poll)
-        update.message.reply_text(text=(''.join([get_phrase(update, 'poll_selected'),' ', poll.name])),reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(get_phrase(update, 'back'))]],
+        poll = Questionnaire.objects.filter(name=text)
+        User.objects.filter(tg_id=get_id(update)).update(poll=poll.get(), score=0)
+        poll.update(number_answers = poll.get().question_amount)
+        questions = QuestionPoll.objects.filter(questionnaire=poll.get())
+        update.message.reply_text(text=(''.join([get_phrase(update, 'poll_selected'), ' ', poll.get().name])), reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(back)]],
             resize_keyboard=True,
             )
         )
-        for question in questions:
-            answers = Answer.objects.filter(question=question)
-            bot.send_message(chat_id=chat_id, text=question.text, reply_markup=inline_keyboard(update,'poll',answers))
-        bot.send_message(chat_id=chat_id, text=(''.join([get_phrase(update, 'results'),'\n', poll.answers])))
+        answers = Answer.objects.filter(question=questions[0])
+        bot.send_message(chat_id=chat_id, text=questions[0].text, reply_markup=inline_keyboard(update,'poll',answers))
         return POLL_HANDLER
-    elif get_phrase(update, 'back'):
+    elif back:
         menu(update)
         return MENU
+
+
+def poll_handler(update: Update, context: CallbackContext): #handles answers fo the questions of the poll
+    query = update.callback_query
+    data = query.data
+    chat_id = get_id(update)
+    answer = Answer.objects.filter(id=data).get()
+    user = User.objects.filter(tg_id=chat_id)
+    poll = Questionnaire.objects.filter(id=get_item(update, 'poll'))
+    questions = QuestionPoll.objects.filter(questionnaire=poll.get())
+    poll.update(number_answers = poll.get().number_answers-1)
+    user.update(score = user.get().score + answer.points )
+    if not poll.get().number_answers <= 0:
+        question = questions[poll.get().question_amount - poll.get().number_answers]
+        answers = Answer.objects.filter(question=question)
+        query.edit_message_text(text=question.text, 
+            reply_markup=inline_keyboard(update,'poll',answers)
+        )
+    else:
+        query.edit_message_text(text=(''.join([get_phrase(update, 'final_score'), str(user.get().score)])))
+        bot.send_message(chat_id=chat_id, text=(''.join([get_phrase(update, 'results'), '\n', poll.get().answers])))
 
 
 def inline_callback_handler(update:Update, context: CallbackContext): # handles callbacks from inliane keyboard query   
@@ -327,15 +346,6 @@ def inline_callback_handler(update:Update, context: CallbackContext): # handles 
     )
     query.edit_message_text(text=get_phrase(update, 'language_set'))
     return NAME
-    
-
-def poll_handler(update: Update, context: CallbackContext): #handles answers fo the questions of the poll
-    query = update.callback_query
-    data = query.data
-    answer = Answer.objects.filter(id=data).get()
-    poll = get_item(update, 'poll')
-    poll.update(number_answers = poll.number_answers-1)
-    query.edit_message_text(text=(''.join([get_phrase(update, 'points'), ' ', str(answer.points)])))
 
 
 def suggestion_handler(update: Update, context: CallbackContext):
