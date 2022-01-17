@@ -8,15 +8,17 @@ from django.db.models.signals import post_save
 from django.utils.translation import activate
 
 
-bot = Bot(token=TOKEN) # telegram bot
+bot = Bot(token=TOKEN)  # telegram bot
 #conversation states
 LANGUAGE, NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION, CATEGORY, KEY_WORDS, POLL_HANDLER, POLL, SUGGESTION, GENDER, AGE, MARIAGE, HEIGHT, WEIGHT= range(16) 
 
-def get_id(update: Update): # returns user`s id 
-    try: return update.effective_message.chat_id
-    except: raise IndexError
+def get_id(update: Update):  # returns user`s id 
+    try:
+        return update.effective_message.chat_id
+    except:
+        raise IndexError
 
-def get_item(update: Update, option): # returns nedeed user`s attribute from DB
+def get_item(update: Update, option):  # returns nedeed user`s attribute from DB
     try:
         object = User.objects.filter(tg_id=get_id(update)).get()
         field_object = User._meta.get_field(str(option))
@@ -25,11 +27,11 @@ def get_item(update: Update, option): # returns nedeed user`s attribute from DB
         raise ValueError
 
 
-def get_language(update: Update): # returns language selected by user
+def get_language(update: Update):  # returns language selected by user
     return get_item(update, 'language')
 
 
-def get_phrase(update: Update, option): # returns particular phrase on a selected language
+def get_phrase(update: Update, option):  # returns particular phrase on a selected language
     try:
         language = Language.objects.filter(id=get_language(update)).get()
         field_object = Language._meta.get_field(str(option))
@@ -38,12 +40,7 @@ def get_phrase(update: Update, option): # returns particular phrase on a selecte
         raise ValueError
 
 
-def user_maker(chat_id):  # creates user`s account in the table if it does not exist
-    try: user, _ = User.objects.get_or_create(tg_id=chat_id,)
-    except: KeyError
-
-
-def keyboard_maker(update, type): # makes keyboard when number of  buttons is variable
+def keyboard_maker(update, type):  # makes keyboard when number of  buttons is variable
     items = type.objects.all()
     keyboard = []
     back = get_phrase(update, 'back')
@@ -56,7 +53,7 @@ def keyboard_maker(update, type): # makes keyboard when number of  buttons is va
     return keyboard
 
 
-def inline_keyboard(update: Update, type, items=None): # creates inline keyboard with appropriate buttons
+def inline_keyboard(update: Update, type, items=None):  # creates inline keyboard with appropriate buttons
     BUTTONS = {}
     keyboard = []
     if type == 'language':
@@ -80,10 +77,13 @@ def inline_keyboard(update: Update, type, items=None): # creates inline keyboard
     return InlineKeyboardMarkup(keyboard)
 
 
-def start(update: Update,context: CallbackContext, *args, **kwargs,): # greets users and asks to choose language
+def start(update: Update,context: CallbackContext, *args, **kwargs,):  # greets users and asks to choose language
     try:
         chat_id = get_id(update)
-        user_maker(chat_id)
+        try:
+            user, _ = User.objects.get_or_create(tg_id=chat_id)
+        except:
+            raise InterruptedError
         bot.send_message(chat_id=chat_id, text=get_phrase(update, 'greetings'), reply_markup=ReplyKeyboardRemove())
         bot.send_message(chat_id=chat_id, text=get_phrase(update, 'language_selection'), reply_markup=inline_keyboard(update, 'language'))
         return LANGUAGE
@@ -91,7 +91,7 @@ def start(update: Update,context: CallbackContext, *args, **kwargs,): # greets u
         raise IndexError
 
 
-def ask_name(update: Update, context: CallbackContext): # recieves name from userand ask phone
+def ask_name(update: Update, context: CallbackContext):  # recieves name from userand ask phone
     try: 
         chat_id=get_id(update)
         text = update.effective_message.text
@@ -108,8 +108,7 @@ def ask_name(update: Update, context: CallbackContext): # recieves name from use
                 name = text
                 User.objects.filter(tg_id=chat_id).update(is_anonymous=False)
             User.objects.filter(tg_id=chat_id).update(name=name)
-            
-            bot.send_message(chat_id=chat_id, # sends message with inline keyboard asking for a phone number 
+            bot.send_message(chat_id=chat_id,  # sends message with inline keyboard asking for a phone number 
                 text=get_phrase(update, 'phone_ask'),
                 reply_markup=ReplyKeyboardMarkup(
                     keyboard=[
@@ -125,7 +124,8 @@ def ask_name(update: Update, context: CallbackContext): # recieves name from use
             return PHONE
         else:
             update.message.reply_text(text=get_phrase(update, 'numbers_name'))
-    except: raise ValueError
+    except:
+        raise ValueError
 
 
 def ask_phone(update: Update, context: CallbackContext): # recieves phone from user and goes to menu
@@ -149,10 +149,12 @@ def menu(update: Update): # displays main menu to the user
     text = get_phrase(update, 'menu')
     bot.send_message(chat_id=get_id(update), text=text, reply_markup=ReplyKeyboardMarkup(
             keyboard=[
-                [KeyboardButton(text=get_phrase(update,'category_menu')), 
+                [
+                 KeyboardButton(text=get_phrase(update,'category_menu')), 
                  KeyboardButton(text=get_phrase(update,'video'))
                 ],
-                [KeyboardButton(text=get_phrase(update,'question_menu')),
+                [
+                 KeyboardButton(text=get_phrase(update,'question_menu')),
                  KeyboardButton(text=get_phrase(update,'chat_menu')),
                  KeyboardButton(text=get_phrase(update,'info_menu')),
                  KeyboardButton(text=get_phrase(update, 'suggestion'))
@@ -250,6 +252,9 @@ def gender_n_mariage_handler(update: Update, context: CallbackContext):
         user.update(mariage=text)
         update.message.reply_text(text=get_phrase(update, 'age'), reply_markup=ReplyKeyboardRemove())
         return AGE
+    elif text == get_phrase(update, 'back'):
+        menu(update)
+        return MENU
 
 
 def contact_reciever(update: Update, context: CallbackContext):  # gets phone number from user`s contact
@@ -378,7 +383,10 @@ def message_handler(update: Update, context: CallbackContext): # handles all mes
         menu(update)
     elif text == get_phrase(update, 'question_menu') :
         update.message.reply_text(text=get_phrase(update, 'gender'), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(get_phrase(update, 'male')), KeyboardButton(get_phrase(update, 'female'))]],
+            keyboard=[
+                [KeyboardButton(get_phrase(update, 'male')), KeyboardButton(get_phrase(update, 'female'))],
+                [back_button]
+            ],
             resize_keyboard=True
             )
         )
