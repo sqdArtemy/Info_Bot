@@ -28,8 +28,7 @@ class BotView(APIView):
 
     def post(self, request, *args, **options):
         try:
-            defaults = Defaults(tzinfo=pytz.timezone('Asia/Tashkent'))
-            bot = Bot(token=TOKEN, defaults=defaults)
+            bot = Bot(token=TOKEN)
             dispatcher = Dispatcher(bot, None, workers=8)
             dispatcher.add_handler(conversation_handler)
             dispatcher.process_update(Update.de_json(request.data, bot))
