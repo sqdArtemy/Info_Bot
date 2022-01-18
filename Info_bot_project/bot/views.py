@@ -5,8 +5,7 @@ from Info_bot_project.settings import TOKEN, URL
 from telegram.ext import Updater, Dispatcher
 from telegram import *
 from telegram.ext import *
-from bot.bot import conversation_handler
-import pytz
+from bot.handlers import conversation_handler
 
 
 class BotView(APIView):

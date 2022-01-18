@@ -2,81 +2,14 @@ from telegram import *
 from telegram.ext import *
 import telegram
 from Info_bot_project.settings import TOKEN
-from bot.models import Language, User, Question, Category, Publication, KeyWord, Link, Questionnaire, QuestionPoll, Answer, Suggestion
+from bot.models import Language, User, Question, Category, Publication, KeyWord, Link, Questionnaire, QuestionPoll, Answer
 from django.dispatch import receiver
 from django.db.models.signals import post_save
-from django.utils.translation import activate
-
+from bot.functions import get_id, get_item, keyboard_maker, get_phrase, inline_keyboard_maker, message_sender
 
 bot = Bot(token=TOKEN)  # telegram bot
 # conversation states
 LANGUAGE, NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION, CATEGORY, KEY_WORDS, POLL_HANDLER, POLL, SUGGESTION, GENDER, AGE, MARIAGE, HEIGHT, WEIGHT = range(16)
-
-
-def get_id(update: Update):  # returns user`s id
-    try:
-        return update.effective_message.chat_id
-    except:
-        raise IndexError
-
-
-def get_item(update: Update, option):  # returns nedeed user`s attribute from DB
-    try:
-        object = User.objects.filter(tg_id=get_id(update)).get()
-        field_object = User._meta.get_field(str(option))
-        return getattr(object, field_object.attname)
-    except:
-        raise ValueError
-
-
-def get_language(update: Update):  # returns language selected by user
-    return get_item(update, 'language')
-
-
-def get_phrase(update: Update, option):  # returns particular phrase on a selected language
-    try:
-        language = Language.objects.filter(id=get_language(update)).get()
-        field_object = Language._meta.get_field(str(option))
-        return getattr(language, field_object.attname)
-    except:
-        raise ValueError
-
-
-def keyboard_maker(update, type):  # makes keyboard when number of  buttons is variable
-    items = type.objects.all()
-    keyboard = []
-    back = get_phrase(update, 'back')
-    for item in items:
-        keyboard.append([KeyboardButton(item.name)])
-    if type != Questionnaire:
-        keyboard.append([KeyboardButton(text=back)])
-    else:
-        keyboard.append([KeyboardButton(text=back),  KeyboardButton(get_phrase(update, 'back_category'))])
-    return keyboard
-
-
-def inline_keyboard(update: Update, type, items=None):  # creates inline keyboard with appropriate buttons
-    BUTTONS = {}
-    keyboard = []
-    if type == 'language':
-        objects = Language.objects.all()
-        for object in objects:
-            text = str(object.name)
-            BUTTONS[text] = text
-            keyboard.append([InlineKeyboardButton(BUTTONS[text], callback_data=object.id)])
-    elif type == 'info':
-        objects = Language.objects.all()
-        text = (objects.filter(id=get_language(update)).get()).chat_menu
-        categories = Category.objects.all()
-        for category in categories:
-            BUTTONS[category.id] = category.name
-            url = Link.objects.filter(category=category.id).get()
-            keyboard.append([InlineKeyboardButton(BUTTONS[category.id], callback_data='group_link', url=url.link)])
-    elif type == 'poll':
-        for item in items:
-            BUTTONS[item.id] = item.text
-            keyboard.append([InlineKeyboardButton(BUTTONS[item.id], callback_data=item.id)])
-    return InlineKeyboardMarkup(keyboard)
 
 
 def start(update: Update, context: CallbackContext, *args, **kwargs,):  # greets users and asks to choose language
@@ -87,7 +20,7 @@ def start(update: Update, context: CallbackContext, *args, **kwargs,):  # greets
         except:
             raise InterruptedError
         bot.send_message(chat_id=chat_id, text=get_phrase(update, 'greetings'), reply_markup=ReplyKeyboardRemove())
-        bot.send_message(chat_id=chat_id, text=get_phrase(update, 'language_selection'), reply_markup=inline_keyboard(update, 'language'))
+        bot.send_message(chat_id=chat_id, text=get_phrase(update, 'language_selection'), reply_markup=inline_keyboard_maker(update, 'language'))
         return LANGUAGE
     except:
         raise IndexError
@@ -174,14 +107,12 @@ def question(update: Update, conext: CallbackContext):  # proceeds user`s questi
     text = update.message.text
     if text != get_phrase(update, 'back'):
         User.objects.filter(tg_id=chat_id).update(question=text)
-        update.message.reply_text(text=(get_phrase(update, 'check_question')).join([' ', text]), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(get_phrase(update, 'yes_q')), KeyboardButton(get_phrase(update, 'no_q'))],
-                [KeyboardButton(get_phrase(update, 'back'))],
-            ],
-            resize_keyboard=True
-            )
-        )
+        text=(get_phrase(update, 'check_question')).join([' ', text])
+        keyboard=[
+            [KeyboardButton(get_phrase(update, 'yes_q')), KeyboardButton(get_phrase(update, 'no_q'))],
+            [KeyboardButton(get_phrase(update, 'back'))],
+        ]
+        message_sender(update, text=text, keyboard=keyboard)      
         return QUESTION_VERIFICATION
     else:
         menu(update)
@@ -198,12 +129,9 @@ def post_finder(update: Update, context: CallbackContext):  # finds all posts wi
         user_keywords = text.split(' ')
 
         def no_posts():  # if there is no posts bot will send this message
-                update.message.reply_text(text=get_phrase(update, 'no_posts'), reply_markup=ReplyKeyboardMarkup(
-                        keyboard=[[KeyboardButton(text=get_phrase(update, 'question_menu'))], back_button],
-                        resize_keyboard=True,
-                        )
-                )
-                return MENU
+            keyboard=[[KeyboardButton(text=get_phrase(update, 'question_menu'))], back_button],
+            message_sender(update, text=get_phrase(update, 'no_posts'), keyboard=keyboard)
+            return MENU
         try:
             publications = Publication.objects.filter(language=get_item(update, 'language'), category=get_item(update, 'chosen_category'))
             for publication in publications:
@@ -241,22 +169,21 @@ def post_finder(update: Update, context: CallbackContext):  # finds all posts wi
         return CATEGORY
 
 
-def gender_n_mariage_handler(update: Update, context: CallbackContext):
+def polls_selection(update: Update, context: CallbackContext):  # sends questions of the questionnaire and then displaying results
     text = update.message.text
-    user = User.objects.filter(tg_id=get_id(update))
-    if text == get_phrase(update, 'male') or text == get_phrase(update, 'female'):
-        user.update(gender=text)
-        update.message.reply_text(text=get_phrase(update, 'mariage'), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(get_phrase(update, 'yes')), KeyboardButton(get_phrase(update, 'no'))]],
-            resize_keyboard=True
-            )
-        )
-        return MARIAGE
-    elif text == get_phrase(update, 'yes') or text == get_phrase(update, 'no'):
-        user.update(mariage=text)
-        update.message.reply_text(text=get_phrase(update, 'age'), reply_markup=ReplyKeyboardRemove())
-        return AGE
-    elif text == get_phrase(update, 'back'):
+    back = get_phrase(update, 'back')
+    if text != back:
+        chat_id = get_id(update)
+        poll = Questionnaire.objects.filter(name=text)
+        User.objects.filter(tg_id=get_id(update)).update(poll=poll.get(), score=0)
+        poll.update(number_answers=poll.get().question_amount)
+        questions = QuestionPoll.objects.filter(questionnaire=poll.get())
+        text=(''.join([get_phrase(update, 'poll_selected'), ' ', poll.get().name]))
+        message_sender(update, text=text, keyboard=[[KeyboardButton(back)]]) 
+        answers = Answer.objects.filter(question=questions[0])
+        bot.send_message(chat_id=chat_id, text=questions[0].text, reply_markup=inline_keyboard_maker(update, 'poll', answers))
+        return POLL_HANDLER
+    elif back:
         menu(update)
         return MENU
 
@@ -268,266 +195,6 @@ def contact_reciever(update: Update, context: CallbackContext):  # gets phone nu
     bot.send_message(chat_id=chat_id, text=get_phrase(update, 'successful_registration'))
     menu(update)
     return MENU
-
-
-def category_handler(update: Update, context: CallbackContext):  # checks if category was inputed
-    try:
-        text = update.message.text
-    except:
-        raise ValueError
-    try:
-        back = get_phrase(update, 'back')
-        if text != back:
-            categories = Category.objects.all()
-            for category in categories:
-                if text == category.name:
-                    User.objects.filter(tg_id=get_id(update)).update(chosen_category=category)
-                    text = ''.join([get_phrase(update, 'selected_category'), ' ', category.name])
-                    update.message.reply_text(text=text, reply_markup=ReplyKeyboardMarkup(
-                        keyboard=[
-                            [KeyboardButton(get_phrase(update, 'poll_button')), KeyboardButton(get_phrase(update, 'find'))],
-                            [KeyboardButton(back), KeyboardButton(get_phrase(update, 'back_category'))],
-                        ],
-                        resize_keyboard=True,
-                        )
-                    )
-                    return MENU
-        else:
-            menu(update)
-            return MENU
-    except:
-        raise TypeError
-
-
-def polls_selection(update: Update, context: CallbackContext):  # sends questions of the questionnaire and then displaying results
-    text = update.message.text
-    back = get_phrase(update, 'back')
-    if text != back:
-        chat_id = get_id(update)
-        poll = Questionnaire.objects.filter(name=text)
-        User.objects.filter(tg_id=get_id(update)).update(poll=poll.get(), score=0)
-        poll.update(number_answers=poll.get().question_amount)
-        questions = QuestionPoll.objects.filter(questionnaire=poll.get())
-        update.message.reply_text(text=(''.join([get_phrase(update, 'poll_selected'), ' ', poll.get().name])), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(back)]],
-            resize_keyboard=True,
-            )
-        )
-        answers = Answer.objects.filter(question=questions[0])
-        bot.send_message(chat_id=chat_id, text=questions[0].text, reply_markup=inline_keyboard(update, 'poll', answers))
-        return POLL_HANDLER
-    elif back:
-        menu(update)
-        return MENU
-
-
-def poll_handler(update: Update, context: CallbackContext):  # handles answers fo the questions of the poll
-    query = update.callback_query
-    data = query.data
-    chat_id = get_id(update)
-    answer = Answer.objects.filter(id=data).get()
-    user = User.objects.filter(tg_id=chat_id)
-    poll = Questionnaire.objects.filter(id=get_item(update, 'poll'))
-    questions = QuestionPoll.objects.filter(questionnaire=poll.get())
-    poll.update(number_answers=poll.get().number_answers-1)
-    user.update(score=user.get().score + answer.points)
-    if not poll.get().number_answers <= 0:
-        question = questions[poll.get().question_amount - poll.get().number_answers]
-        answers = Answer.objects.filter(question=question)
-        query.edit_message_text(
-            text=question.text,
-            reply_markup=inline_keyboard(update, 'poll', answers)
-        )
-    else:
-        query.edit_message_text(text=(''.join([get_phrase(update, 'final_score'), str(user.get().score)])))
-        bot.send_message(chat_id=chat_id, text=(''.join([get_phrase(update, 'results'), '\n', poll.get().answers])))
-
-
-def inline_callback_handler(update: Update, context: CallbackContext):  # handles callbacks from inliane keyboard query
-    query = update.callback_query
-    data = query.data
-    chat_id = get_id(update)
-    language = Language.objects.filter(id=data).get()
-    User.objects.filter(tg_id=chat_id).update(language=data)
-    activate(language.code)
-    bot.send_message(chat_id=get_id(update), text=get_phrase(update, 'name_ask'), reply_markup=ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=get_phrase(update, 'anonymous'))]],
-        resize_keyboard=True,
-        )
-    )
-    query.edit_message_text(text=get_phrase(update, 'language_set'))
-    return NAME
-
-
-def suggestion_handler(update: Update, context: CallbackContext):
-    text = update.message.text
-    if text != get_phrase(update, 'back'):
-        suggestion = Suggestion.objects.create(
-            text=text,
-            user_id=get_id(update),
-        )
-        update.message.reply_text(text=get_phrase(update, 'thanks_suggestion'))
-    else:
-        menu(update)
-    return MENU
-
-
-def message_handler(update: Update, context: CallbackContext):  # handles all messages from user
-    chat_id = get_id(update)
-    text = update.message.text
-    back_button = KeyboardButton(text=get_phrase(update, 'back'))
-    back_to_category = KeyboardButton(get_phrase(update, 'back_category'))
-    if text == get_phrase(update, 'info_menu'):
-        update.message.reply_text(
-            text=get_phrase(update, 'info'),
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard=[[back_button]],
-                resize_keyboard=True
-            )
-        )
-    elif text == get_phrase(update, 'back'):
-        menu(update)
-        return MENU
-    elif text == get_phrase(update, 'chat_menu'):
-        update.message.reply_text(text=get_phrase(update, 'chat'), reply_markup=inline_keyboard(update, 'info'))
-        menu(update)
-    elif text == get_phrase(update, 'question_menu'):
-        update.message.reply_text(text=get_phrase(update, 'gender'), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(get_phrase(update, 'male')), KeyboardButton(get_phrase(update, 'female'))],
-                [back_button]
-            ],
-            resize_keyboard=True
-            )
-        )
-        return GENDER
-    elif text == get_phrase(update, 'no_q'):
-        update.message.reply_text(text=get_phrase(update, 'ask_question'), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[back_button]],
-            resize_keyboard=True
-            )
-        )
-        return QUESTION
-    elif text == get_phrase(update, 'suggestion'):
-        update.message.reply_text(text=get_phrase(update, 'write_suggestion'), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[back_button]],
-            resize_keyboard=True,
-            )
-        )
-        return SUGGESTION
-    elif text == get_phrase(update, 'yes_q'):
-        chat_id = get_id(update)
-        user = User.objects.filter(tg_id=chat_id).get()
-        question = Question.objects.create(
-            user_id=chat_id,
-            text=user.question,
-            user_age=user.age,
-            user_gender=user.gender,
-            user_mariage=user.mariage,
-            user_weight=user.weight,
-            user_height=user.height,
-        )
-        bot.send_message(chat_id=chat_id, text=get_phrase(update, 'question_created'))
-        menu(update)
-        return MENU
-    elif text == get_phrase(update, 'video'):
-        url = Link.objects.filter(name='Video').get()
-        update.message.reply_text(text=(''.join([get_phrase(update, 'video_text'), url.link])), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[back_button]],
-            resize_keyboard=True,
-            )
-        )
-    elif text == get_phrase(update, 'category_menu') or text == get_phrase(update, 'back_category'):
-        update.message.reply_text(text=get_phrase(update, 'categories'), reply_markup=ReplyKeyboardMarkup(
-            keyboard=keyboard_maker(update, Category),
-            resize_keyboard=True,
-            )
-        )
-        return CATEGORY
-    elif text == get_phrase(update, 'find'):
-        update.message.reply_text(text=(get_phrase(update, 'key_words')), reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[back_button, back_to_category]],
-            resize_keyboard=True,
-            )
-        )
-        return KEY_WORDS
-    elif text == get_phrase(update, 'poll_button'):
-        try:
-            polls = Questionnaire.objects.filter(category=get_item(update, 'chosen_category'))
-        except:
-            polls = 0
-        if polls:
-            update.message.reply_text(text=get_phrase(update, 'select_poll'), reply_markup=ReplyKeyboardMarkup(
-                keyboard=keyboard_maker(update, Questionnaire),
-                resize_keyboard=True,
-                )
-            )
-            return POLL
-        else:
-            update.message.reply_text(text=get_phrase(update, 'no_polls'), reply_markup=ReplyKeyboardMarkup(
-                keyboard=[[back_button, back_to_category]],
-                resize_keyboard=True,
-                )
-            )
-            return MENU
-
-
-class NumberHandler:  # this class constructs handlers for states, where inputs
-    def __init__(self, phrase, field):
-        self.phrase = phrase
-        self.field = field
-
-    def builder(self, update: Update, context: CallbackContext):
-        text = update.message.text
-        if any(map(str.isdecimal, text)):
-            user = User.objects.filter(tg_id=get_id(update)).get()
-            setattr(user, self.field, text)
-            user.save()
-            update.message.reply_text(text=get_phrase(update, self.phrase))
-        else:
-            update.message.reply_text(text=get_phrase(update, 'incorrect_data'))
-
-
-# handlers, which should chek number input
-def age_handler(update: Update, context: CallbackContext):  # writes user`s age into DB if it is correct
-    NumberHandler('weight', 'age').builder(update, context)
-    return WEIGHT
-
-
-def weight_handler(update: Update, context: CallbackContext):  # writes user`s weight into DB if it is correct
-    NumberHandler('height', 'weight').builder(update, context)
-    return HEIGHT
-
-
-def height_handler(update: Update, context: CallbackContext):  # writes user`s age height DB if it is correct
-    NumberHandler('ask_question', 'height').builder(update, context)
-    return QUESTION
-
-
-# conversation handler with states for dispatcher
-conversation_handler = ConversationHandler(
-    entry_points=[CommandHandler('start', start)],
-    states={
-        LANGUAGE: [CallbackQueryHandler(callback=inline_callback_handler)],
-        NAME: [MessageHandler(Filters.text, ask_name)],
-        PHONE: [MessageHandler(Filters.text, ask_phone), MessageHandler(Filters.contact, contact_reciever)],
-        MENU: [MessageHandler(Filters.text, message_handler)],
-        QUESTION: [MessageHandler(Filters.text, question)],
-        QUESTION_VERIFICATION: [MessageHandler(Filters.text, message_handler)],
-        CATEGORY: [MessageHandler(Filters.text, category_handler)],
-        POLL: [MessageHandler(Filters.text, polls_selection)],
-        KEY_WORDS: [MessageHandler(Filters.text, post_finder)],
-        SUGGESTION: [MessageHandler(Filters.text, suggestion_handler)],
-        POLL_HANDLER: [CallbackQueryHandler(callback=poll_handler), MessageHandler(Filters.text, message_handler)],
-        GENDER: [MessageHandler(Filters.text, gender_n_mariage_handler)],
-        MARIAGE: [MessageHandler(Filters.text, gender_n_mariage_handler)],
-        AGE: [MessageHandler(Filters.text, age_handler)],
-        WEIGHT: [MessageHandler(Filters.text, weight_handler)],
-        HEIGHT: [MessageHandler(Filters.text, height_handler)]
-        },
-    fallbacks=[MessageHandler(Filters.command, start)],
-    allow_reentry=True,
-)
 
 
 @receiver(post_save, sender=Question)  # cheks if question was answered

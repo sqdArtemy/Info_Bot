@@ -1,4 +1,3 @@
-from dataclasses import field
 from django.contrib import admin
 from bot.models import Category, Publication, Language, User, Question, KeyWord, Link, Questionnaire, Answer, QuestionPoll, Suggestion
 

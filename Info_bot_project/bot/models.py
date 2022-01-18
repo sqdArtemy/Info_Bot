@@ -1,7 +1,5 @@
-from audioop import maxpp
-from statistics import mode
 from django.db import models
-from django.db.models.deletion import CASCADE, PROTECT, SET, SET_NULL
+from django.db.models.deletion import CASCADE, PROTECT, SET_NULL
 
 
 class Category(models.Model):

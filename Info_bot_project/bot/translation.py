@@ -16,6 +16,7 @@ class QuestionPollTranslationOption(TranslationOptions):
 class AnswerTranslationOption(TranslationOptions):
     fields = ('text', )
 
+
 @register(Questionnaire)
 class QuestionnaireTranslationOption(TranslationOptions):
     fields = ('name', 'answers')
