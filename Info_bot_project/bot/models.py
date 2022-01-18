@@ -19,7 +19,7 @@ class Language(models.Model):
     category_menu = models.CharField('Category button in the menu', max_length=256, blank=True)
     question_menu = models.CharField('"Ask a question" button ', max_length=256, blank=True)
     chat_menu = models.CharField('"Group-chat menu" button ', max_length=256, blank=True)
-    info_menu =  models.CharField('"Information about us" button', max_length=256, blank=True)
+    info_menu = models.CharField('"Information about us" button', max_length=256, blank=True)
     info = models.CharField('Information', max_length=256, blank=True)
     send_contact = models.CharField('"Send contact" button', max_length=256, blank=True)
     language_set = models.CharField('Particular language has been chosen', max_length=256, blank=True)
@@ -87,7 +87,7 @@ class Publication(models.Model):
 
 class Questionnaire(models.Model):
     category = models.ForeignKey(Category, on_delete=SET_NULL, null=True, blank=True)
-    name = models.CharField('Name of the questionnaire',max_length=256, unique=True)
+    name = models.CharField('Name of the questionnaire', max_length=256, unique=True)
     question_amount = models.IntegerField('Amount of questions', default=5)
     answers = models.TextField('Table with answer-points')
     number_answers = models.PositiveIntegerField('Number of question', blank=True)
@@ -124,7 +124,7 @@ class Question(models.Model):
     time = models.DateTimeField('Asked at:', auto_now_add=True)
     user_age = models.PositiveIntegerField('User`s age')
     user_gender = models.CharField('User`s gender', max_length=256)
-    user_mariage = models.CharField('User`s mariage status', max_length=256)
+    user_mariage = models.CharField('User`s marriage status', max_length=256)
     user_weight = models.CharField('User`s weight', max_length=256)
     user_height = models.CharField('User`s height', max_length=256)
 
@@ -138,6 +138,7 @@ class KeyWord(models.Model):
 
     def __str__(self) -> str:
         return f'{self.word}'
+
 
 class Link(models.Model):
     name = models.CharField('Name of link', max_length=100)

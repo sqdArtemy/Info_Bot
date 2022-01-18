@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    #my apps
+    # my apps
     'bot',
 ]
 
@@ -107,8 +107,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 LANGUAGES = (
-    ('ru', ('Russian')),
-    ('uz', ('Uzbek')),
+    ('ru', 'Russian'),
+    ('uz', 'Uzbek'),
 )
 
 LANGUAGE_CODE = 'ru'
@@ -136,7 +136,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TOKEN = '5091830633:AAHwGC-HNt7tvXuFOIal51fu5XjvtznZYTM'
 
 # Server`s url
-URL = 'https://f32e-213-230-127-84.ngrok.io/'
+URL = 'https://56ae-213-230-127-84.ngrok.io/'
 
 # Model translation
 MODELTRANSLATION_TRANSLATION_FILES = (

@@ -1,9 +1,11 @@
 from django.contrib import admin
-from bot.models import Category, Publication, Language, User, Question, KeyWord, Link, Questionnaire, Answer, QuestionPoll, Suggestion
+from .models import Category, Publication, Language, User, Question, KeyWord, Link, Questionnaire, Answer, QuestionPoll, \
+    Suggestion
 
 
 class InlineKeyword(admin.StackedInline):
     model = KeyWord
+
 
 class InlineAnswer(admin.TabularInline):
     model = Answer

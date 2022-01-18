@@ -1,25 +1,26 @@
 from rest_framework.views import APIView
 import os
 from django.http import JsonResponse
-from Info_bot_project.settings import TOKEN, URL
 from telegram.ext import Updater, Dispatcher
 from telegram import *
-from telegram.ext import *
-from bot.handlers import conversation_handler
+from .handlers import conversation_handler
+from django.conf import settings
 
 
 class BotView(APIView):
+
     def get(self, request, *args, **options):
         try:
             PORT = int(os.environ.get('PORT', '8000'))
-            bot = Bot(token=TOKEN)
+            bot = Bot(token=settings.TOKEN)
             updater = Updater(bot=bot, use_context=True)
 
-            bot.setWebhook(URL + 'info_bot/')
-            updater.start_webhook(listen='0.0.0.0',
-                            port=PORT,
-                            url_path=TOKEN,
-                            webhook_url=(URL+'info_bot/')
+            bot.setWebhook(settings.URL + 'info_bot/')
+            updater.start_webhook(
+                listen='0.0.0.0',
+                port=PORT,
+                url_path=settings.TOKEN,
+                webhook_url=(settings.URL+'info_bot/')
             )
             return JsonResponse({"ok": "Webhook set successfully"})
         except:
@@ -27,7 +28,7 @@ class BotView(APIView):
 
     def post(self, request, *args, **options):
         try:
-            bot = Bot(token=TOKEN)
+            bot = Bot(token=settings.TOKEN)
             dispatcher = Dispatcher(bot, None, workers=8)
             dispatcher.add_handler(conversation_handler)
             dispatcher.process_update(Update.de_json(request.data, bot))

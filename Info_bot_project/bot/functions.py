@@ -1,5 +1,5 @@
 from telegram import Update, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
-from bot.models import User, Language, Questionnaire, Link, Category
+from .models import User, Language, Questionnaire, Link, Category
 
 
 def get_id(update: Update):  # returns user`s id
@@ -9,7 +9,7 @@ def get_id(update: Update):  # returns user`s id
         raise IndexError
 
 
-def get_item(update: Update, option):  # returns nedeed user`s attribute from DB
+def get_item(update: Update, option):  # returns needed user`s attribute from DB
     try:
         object = User.objects.filter(tg_id=get_id(update)).get()
         field_object = User._meta.get_field(str(option))
@@ -68,7 +68,7 @@ def message_sender(update: Update, text, keyboard):
     update.message.reply_text(
         text=text,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard = keyboard,
+            keyboard=keyboard,
             resize_keyboard=True
         )
     )
