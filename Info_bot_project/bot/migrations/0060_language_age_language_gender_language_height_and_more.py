@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='language',
-            name='mariage',
+            name='marriage',
             field=models.CharField(blank=True, max_length=100, verbose_name='Is user married?'),
         ),
         migrations.AddField(

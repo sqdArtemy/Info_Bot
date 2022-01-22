@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='question',
             name='user_mariage',
-            field=models.CharField(max_length=256, verbose_name='User`s mariage status'),
+            field=models.CharField(max_length=256, verbose_name='User`s marriage status'),
         ),
         migrations.AlterField(
             model_name='question',

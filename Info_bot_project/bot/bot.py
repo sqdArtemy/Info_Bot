@@ -9,9 +9,8 @@ from django.conf import settings
 
 bot = Bot(token=settings.TOKEN)  # telegram bot
 # conversation states
-[LANGUAGE, NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION, CATEGORY, KEY_WORDS, POLL_HANDLER, POLL, SUGGESTION,
- GENDER, AGE, MARIAGE, HEIGHT, WEIGHT] = range(
-    16)
+(LANGUAGE, NAME, PHONE, QUESTION, MENU, QUESTION_VERIFICATION, CATEGORY, KEY_WORDS, POLL_HANDLER, POLL, SUGGESTION,
+ GENDER, AGE, MARRIAGE, HEIGHT, WEIGHT) = range(16)
 
 
 def start(update: Update, context: CallbackContext, *args, **kwargs, ):  # greets users and asks to choose language
@@ -19,14 +18,14 @@ def start(update: Update, context: CallbackContext, *args, **kwargs, ):  # greet
         chat_id = get_id(update)
         try:
             user, _ = User.objects.get_or_create(tg_id=chat_id)
-        except:
-            raise InterruptedError
+        except FileNotFoundError:
+            raise FileNotFoundError
         bot.send_message(chat_id=chat_id, text=get_phrase(update, 'greetings'), reply_markup=ReplyKeyboardRemove())
         bot.send_message(chat_id=chat_id, text=get_phrase(update, 'language_selection'),
                          reply_markup=inline_keyboard_maker(update, 'language'))
         return LANGUAGE
-    except:
-        raise IndexError
+    except TelegramError:
+        raise TelegramError
 
 
 def ask_name(update: Update, context: CallbackContext):  # receives name from user and ask phone
@@ -63,14 +62,14 @@ def ask_name(update: Update, context: CallbackContext):  # receives name from us
             return PHONE
         else:
             update.message.reply_text(text=get_phrase(update, 'numbers_name'))
-    except:
-        raise ValueError
+    except TelegramError:
+        raise TelegramError
 
 
 def ask_phone(update: Update, context: CallbackContext):  # receives phone from user and goes to menu
     try:
         text = update.effective_message.text
-        text = text[text.find('+') + 1:]
+        text = text.replace('+', '')
         codes = ('33', '55', '77', '88', '90', '91', '93', '94', '95', '97', '98', '99')
         if (any(map(str.isdecimal, text)) and len(text) == 12 and (text[3:5] in codes)) or text == get_phrase(update,
                                                                                                               'skip'):
@@ -81,37 +80,40 @@ def ask_phone(update: Update, context: CallbackContext):  # receives phone from 
             return MENU
         else:
             update.message.reply_text(text=get_phrase(update, 'incorrect_phone'))
-    except:
-        raise IndexError
+    except TelegramError:
+        raise TelegramError
 
 
 def menu(update: Update):  # displays main menu to the user
-    text = get_phrase(update, 'menu')
-    bot.send_message(chat_id=get_id(update), text=text, reply_markup=ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text=get_phrase(update, 'category_menu')),
-                KeyboardButton(text=get_phrase(update, 'video'))
+    try:
+        text = get_phrase(update, 'menu')
+        bot.send_message(chat_id=get_id(update), text=text, reply_markup=ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text=get_phrase(update, 'category_menu')),
+                    KeyboardButton(text=get_phrase(update, 'video'))
+                ],
+                [
+                    KeyboardButton(text=get_phrase(update, 'question_menu')),
+                    KeyboardButton(text=get_phrase(update, 'chat_menu')),
+                    KeyboardButton(text=get_phrase(update, 'info_menu')),
+                    KeyboardButton(text=get_phrase(update, 'suggestion'))
+                ]
             ],
-            [
-                KeyboardButton(text=get_phrase(update, 'question_menu')),
-                KeyboardButton(text=get_phrase(update, 'chat_menu')),
-                KeyboardButton(text=get_phrase(update, 'info_menu')),
-                KeyboardButton(text=get_phrase(update, 'suggestion'))
-            ]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
-                     )
+            resize_keyboard=True,
+            one_time_keyboard=True,
+            )
+        )
+    except TelegramError:
+        raise TelegramError
 
 
-def question(update: Update, conext: CallbackContext):  # proceeds user`s questions
+def question(update: Update, context: CallbackContext):  # proceeds user`s questions
     chat_id = get_id(update)
     text = update.message.text
     if text != get_phrase(update, 'back'):
         User.objects.filter(tg_id=chat_id).update(question=text)
-        text = (get_phrase(update, 'check_question')).join([' ', text])
+        text = f"{get_phrase(update, 'check_question')} {text}"
         keyboard = [
             [KeyboardButton(get_phrase(update, 'yes_q')), KeyboardButton(get_phrase(update, 'no_q'))],
             [KeyboardButton(get_phrase(update, 'back'))],
@@ -123,8 +125,8 @@ def question(update: Update, conext: CallbackContext):  # proceeds user`s questi
         return MENU
 
 
-def post_finder(update: Update,
-                context: CallbackContext):  # finds all posts wich have same keywords with user`s keywords
+# finds all posts which have same keywords with user`s keywords
+def post_finder(update: Update, context: CallbackContext):
     text = update.message.text
     back = get_phrase(update, 'back')
     back_category = get_phrase(update, 'back_category')
@@ -150,21 +152,21 @@ def post_finder(update: Update,
                 update.message.reply_text(text=get_phrase(update, 'posts_found'), reply_markup=ReplyKeyboardMarkup(
                     keyboard=[back_button],
                     resize_keyboard=True,
+                    )
                 )
-                                          )
                 for post in posts:
                     try:
                         text = ''.join(
                             ['*', post.topic, '*', '\n\n', post.text, '\n', '*', get_phrase(update, 'reference_link'),
                              '*', ': ', post.link])
                         update.message.reply_text(text=text, parse_mode=telegram.ParseMode.MARKDOWN)
-                    except:
-                        raise ValueError
+                    except TelegramError:
+                        raise TelegramError
                 posts = []
                 return MENU
             else:
                 no_posts()
-        except:
+        except FileNotFoundError:
             no_posts()
     elif text == back:
         menu(update)
@@ -173,24 +175,30 @@ def post_finder(update: Update,
         update.message.reply_text(text=get_phrase(update, 'categories'), reply_markup=ReplyKeyboardMarkup(
             keyboard=keyboard_maker(update, Category),
             resize_keyboard=True,
+            )
         )
-                                  )
         return CATEGORY
 
 
-def polls_selection(update: Update,
-                    context: CallbackContext):  # send questions of the questionnaire and then displaying results
+# send questions of the questionnaire and then displaying results
+def polls_selection(update: Update, context: CallbackContext):
     text = update.message.text
-    back = get_phrase(update, 'back')
+    back = get_phrase(update, 'back')  # phrase of "back" button
     if text != back:
         chat_id = get_id(update)
-        poll = Questionnaire.objects.filter(name=text)
-        User.objects.filter(tg_id=get_id(update)).update(poll=poll.get(), score=0)
-        poll.update(number_answers=poll.get().question_amount)
-        questions = QuestionPoll.objects.filter(questionnaire=poll.get())
-        text = (''.join([get_phrase(update, 'poll_selected'), ' ', poll.get().name]))
+        poll_object = Questionnaire.objects.filter(name=text)
+        poll = poll_object.get()
+
+        # set counter values to default values
+        User.objects.filter(tg_id=get_id(update)).update(poll=poll, score=0)
+        poll_object.update(number_answers=poll.question_amount)
+
+        # creating text of the answer
+        questions = QuestionPoll.objects.filter(questionnaire=poll)
+        text = f" {get_phrase(update, 'poll_selected')}  {poll.name}"
         message_sender(update, text=text, keyboard=[[KeyboardButton(back)]])
         answers = Answer.objects.filter(question=questions[0])
+
         bot.send_message(chat_id=chat_id, text=questions[0].text,
                          reply_markup=inline_keyboard_maker(update, 'poll', answers))
         return POLL_HANDLER
@@ -199,7 +207,7 @@ def polls_selection(update: Update,
         return MENU
 
 
-def contact_reciever(update: Update, context: CallbackContext):  # gets phone number from user`s contact
+def contact_receiver(update: Update, context: CallbackContext):  # gets phone number from user`s contact
     chat_id = get_id(update)
     phone = update.effective_message.contact.phone_number
     User.objects.filter(tg_id=chat_id).update(phone=phone)
@@ -208,29 +216,26 @@ def contact_reciever(update: Update, context: CallbackContext):  # gets phone nu
     return MENU
 
 
-@receiver(post_save, sender=Question)  # checks if question was answered
+# checks if question was answered and sends response
+@receiver(post_save, sender=Question)
 def question_observe(sender, instance: Question, **kwargs):
     try:
         question = instance
         user_language = (User.objects.filter(tg_id=question.user_id).get()).language
         language = Language.objects.filter(name=user_language).get()
-        if question.status == False and question.answer:
-            text = ''.join(
-                [language.answered_question, '\n', language.question, ' ', question.text, '\n', language.answer, ' ',
-                 question.answer])
+        if question.status is False and question.answer:
+            text = f"{language.answered_question}\n{language.question} {question.text}\n{language.answer} {question.answer}"
             bot.send_message(chat_id=question.user_id, text=text)
-            Question.objects.filter(id=question.id).update(status=True)
-    except:
-        raise ValueError
+            Question.objects.filter(id=question.id).update(status=True)  # set status to "answered"
+    except TelegramError:
+        raise TelegramError
 
 
 @receiver(post_save, sender=Publication)  # if there is new publication, bot sends it to the group
 def publication_sender(sender, instance: Publication, **kwargs):
     try:
-        text = ''.join(
-            ['*', instance.topic, '*', '\n\n', instance.text, '\n', '*', instance.language.reference_link, '*', ': ',
-             instance.link])
+        text = f"*{instance.topic}*\n\n{instance.text}\n*{instance.language.reference_link}*: {instance.link}"
         channel = Link.objects.filter(name='Channel_id').get()
         bot.send_message(chat_id=channel.link, text=text, parse_mode=telegram.ParseMode.MARKDOWN)
-    except:
-        raise FileExistsError
+    except TelegramError:
+        raise TelegramError

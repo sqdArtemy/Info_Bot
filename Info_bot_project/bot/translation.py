@@ -3,7 +3,7 @@ from modeltranslation.translator import TranslationOptions, register
 
 
 @register(Category)
-class CategotyTranslationOptions(TranslationOptions):
+class CategoryTranslationOptions(TranslationOptions):
     fields = ('name',)
 
 

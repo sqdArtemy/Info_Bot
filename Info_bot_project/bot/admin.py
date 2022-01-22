@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Publication, Language, User, Question, KeyWord, Link, Questionnaire, Answer, QuestionPoll, \
+from .models import Category, Publication, Language, User, Question, KeyWord, Link, Questionnaire, Answer, QuestionPoll,\
     Suggestion
 
 
@@ -14,11 +14,11 @@ class InlineAnswer(admin.TabularInline):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_dispaly = ('name', 'gender',),
+    list_display = ('name',)
 
 
 @admin.register(Publication)
-class PublicationAdmmin(admin.ModelAdmin):
+class PublicationAdmin(admin.ModelAdmin):
     list_display = ('category', 'topic', 'language')
     inlines = [InlineKeyword]
 

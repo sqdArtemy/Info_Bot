@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='question',
             name='user_mariage',
-            field=models.CharField(blank=True, max_length=256, verbose_name='User`s mariage status'),
+            field=models.CharField(blank=True, max_length=256, verbose_name='User`s marriage status'),
         ),
         migrations.AddField(
             model_name='question',

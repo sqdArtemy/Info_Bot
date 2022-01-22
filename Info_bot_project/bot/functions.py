@@ -1,12 +1,12 @@
-from telegram import Update, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram import Update, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, TelegramError
 from .models import User, Language, Questionnaire, Link, Category
 
 
 def get_id(update: Update):  # returns user`s id
     try:
         return update.effective_message.chat_id
-    except:
-        raise IndexError
+    except TelegramError:
+        raise TelegramError
 
 
 def get_item(update: Update, option):  # returns needed user`s attribute from DB

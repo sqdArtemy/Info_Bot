@@ -127,7 +127,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='language',
-            name='mariage',
+            name='marriage',
             field=models.CharField(blank=True, max_length=256, verbose_name='Is user married?'),
         ),
         migrations.AlterField(

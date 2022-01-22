@@ -77,7 +77,7 @@ class Language(models.Model):
 class Publication(models.Model):
     category = models.ForeignKey(Category, on_delete=CASCADE)
     topic = models.CharField('Publication`s topic', max_length=256)
-    text = models.TextField('Pulication`s text', blank=True)
+    text = models.TextField('Publication`s text', blank=True)
     link = models.CharField('Reference link', max_length=100)
     language = models.ForeignKey(Language, on_delete=PROTECT)
 
@@ -107,7 +107,7 @@ class User(models.Model):
     is_anonymous = models.BooleanField('Is user anonymous?', default=False)
     age = models.PositiveIntegerField('User`s age', blank=True, null=True)
     gender = models.CharField('User`s gender', max_length=256, blank=True, null=True)
-    mariage = models.CharField('User`s mariage status', max_length=256, blank=True, null=True)
+    mariage = models.CharField('User`s marriage status', max_length=256, blank=True, null=True)
     weight = models.CharField('User`s weight', max_length=256, blank=True, null=True)
     height = models.CharField('User`s height', max_length=256, blank=True, null=True)
     score = models.PositiveIntegerField('Overall score for poll', blank=True, null=True)

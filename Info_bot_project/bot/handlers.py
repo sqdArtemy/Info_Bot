@@ -1,22 +1,22 @@
 from django.utils.translation import activate
 from .models import Language, User, Question, Category, Link, Questionnaire, QuestionPoll, Answer, Suggestion
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, TelegramError
 from telegram.ext import CallbackContext, MessageHandler, Filters, CallbackQueryHandler, ConversationHandler, \
     CommandHandler
 from .functions import get_phrase, get_id, get_item, message_sender, inline_keyboard_maker, keyboard_maker
-from .bot import menu, start, ask_name, ask_phone, question, contact_reciever, polls_selection, post_finder, bot
-from .bot import MARIAGE, AGE, MENU, NAME, HEIGHT, WEIGHT, GENDER, QUESTION, SUGGESTION, POLL, KEY_WORDS, CATEGORY, \
+from .bot import menu, start, ask_name, ask_phone, question, contact_receiver, polls_selection, post_finder, bot
+from .bot import MARRIAGE, AGE, MENU, NAME, HEIGHT, WEIGHT, GENDER, QUESTION, SUGGESTION, POLL, KEY_WORDS, CATEGORY, \
     LANGUAGE, QUESTION_VERIFICATION, PHONE, POLL_HANDLER
 
 
-def gender_n_mariage_handler(update: Update, context: CallbackContext):
+def gender_n_marriage_handler(update: Update, context: CallbackContext):
     text = update.message.text
     user = User.objects.filter(tg_id=get_id(update))
     if text == get_phrase(update, 'male') or text == get_phrase(update, 'female'):
         user.update(gender=text)
         keyboard = [[KeyboardButton(get_phrase(update, 'yes')), KeyboardButton(get_phrase(update, 'no'))]]
         message_sender(update, text=get_phrase(update, 'mariage'), keyboard=keyboard)
-        return MARIAGE
+        return MARRIAGE
     elif text == get_phrase(update, 'yes') or text == get_phrase(update, 'no'):
         user.update(mariage=text)
         update.message.reply_text(text=get_phrase(update, 'age'), reply_markup=ReplyKeyboardRemove())
@@ -29,16 +29,13 @@ def gender_n_mariage_handler(update: Update, context: CallbackContext):
 def category_handler(update: Update, context: CallbackContext):  # checks if category was inputted
     try:
         text = update.message.text
-    except:
-        raise ValueError
-    try:
         back = get_phrase(update, 'back')
         if text != back:
             categories = Category.objects.all()
             for category in categories:
                 if text == category.name:
                     User.objects.filter(tg_id=get_id(update)).update(chosen_category=category)
-                    text = ''.join([get_phrase(update, 'selected_category'), ' ', category.name])
+                    text = f"{get_phrase(update, 'selected_category')} {category.name}"
                     keyboard = [
                         [KeyboardButton(get_phrase(update, 'poll_button')), KeyboardButton(get_phrase(update, 'find'))],
                         [KeyboardButton(back), KeyboardButton(get_phrase(update, 'back_category'))],
@@ -48,8 +45,8 @@ def category_handler(update: Update, context: CallbackContext):  # checks if cat
         else:
             menu(update)
             return MENU
-    except:
-        raise TypeError
+    except TelegramError:
+        raise TelegramError
 
 
 def poll_handler(update: Update, context: CallbackContext):  # handle answers fo the questions of the poll
@@ -108,6 +105,11 @@ def message_handler(update: Update, context: CallbackContext):  # handles all me
     text = update.message.text
     back_button = KeyboardButton(text=get_phrase(update, 'back'))
     back_to_category = KeyboardButton(get_phrase(update, 'back_category'))
+
+    """
+    there are states, which check how to handle particular phrase and make response to them
+    """
+
     if text == get_phrase(update, 'info_menu'):
         message_sender(update, text=get_phrase(update, 'info'), keyboard=[[back_button]])
 
@@ -123,7 +125,7 @@ def message_handler(update: Update, context: CallbackContext):  # handles all me
         keyboard = [
                        [KeyboardButton(get_phrase(update, 'male')), KeyboardButton(get_phrase(update, 'female'))],
                        [back_button]
-                   ],
+                   ]
         message_sender(update, text=get_phrase(update, 'gender'), keyboard=keyboard)
         return GENDER
 
@@ -153,7 +155,7 @@ def message_handler(update: Update, context: CallbackContext):  # handles all me
 
     elif text == get_phrase(update, 'video'):
         url = Link.objects.filter(name='Video').get()
-        text = (''.join([get_phrase(update, 'video_text'), url.link]))
+        text = f"{get_phrase(update, 'video_text')} {url.link}"
         message_sender(update, text=text, keyboard=[[back_button]])
 
     elif text == get_phrase(update, 'category_menu') or text == get_phrase(update, 'back_category'):
@@ -194,7 +196,7 @@ class NumberHandler:  # this class constructs handlers for states, where inputs
             update.message.reply_text(text=get_phrase(update, 'incorrect_data'))
 
 
-# handlers, which should chek number input
+# handlers, which should check number input
 def age_handler(update: Update, context: CallbackContext):  # writes user`s age into DB if it is correct
     NumberHandler('weight', 'age').builder(update, context)
     return WEIGHT
@@ -216,7 +218,7 @@ conversation_handler = ConversationHandler(
     states={
         LANGUAGE: [CallbackQueryHandler(callback=inline_callback_handler)],
         NAME: [MessageHandler(Filters.text, ask_name)],
-        PHONE: [MessageHandler(Filters.text, ask_phone), MessageHandler(Filters.contact, contact_reciever)],
+        PHONE: [MessageHandler(Filters.text, ask_phone), MessageHandler(Filters.contact, contact_receiver)],
         MENU: [MessageHandler(Filters.text, message_handler)],
         QUESTION: [MessageHandler(Filters.text, question)],
         QUESTION_VERIFICATION: [MessageHandler(Filters.text, message_handler)],
@@ -225,8 +227,8 @@ conversation_handler = ConversationHandler(
         KEY_WORDS: [MessageHandler(Filters.text, post_finder)],
         SUGGESTION: [MessageHandler(Filters.text, suggestion_handler)],
         POLL_HANDLER: [CallbackQueryHandler(callback=poll_handler), MessageHandler(Filters.text, message_handler)],
-        GENDER: [MessageHandler(Filters.text, gender_n_mariage_handler)],
-        MARIAGE: [MessageHandler(Filters.text, gender_n_mariage_handler)],
+        GENDER: [MessageHandler(Filters.text, gender_n_marriage_handler)],
+        MARRIAGE: [MessageHandler(Filters.text, gender_n_marriage_handler)],
         AGE: [MessageHandler(Filters.text, age_handler)],
         WEIGHT: [MessageHandler(Filters.text, weight_handler)],
         HEIGHT: [MessageHandler(Filters.text, height_handler)]

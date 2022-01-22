@@ -133,10 +133,10 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Telegram bot token 
-TOKEN = '5091830633:AAHwGC-HNt7tvXuFOIal51fu5XjvtznZYTM'
+TOKEN = 'telegram bot`s token'
 
 # Server`s url
-URL = 'https://9c91-31-40-29-18.ngrok.io/'
+URL = 'url of your web server'
 
 # Model translation
 MODELTRANSLATION_TRANSLATION_FILES = (
