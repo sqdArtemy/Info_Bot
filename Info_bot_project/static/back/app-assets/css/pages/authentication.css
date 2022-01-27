@@ -1,0 +1,43 @@
+/* Authentication page css */
+/*-------------------------*/
+.bg-authentication {
+  background-color: #F2F4F4;
+}
+
+.bg-authentication #icon-arrow {
+  position: absolute;
+  top: 11px;
+  right: 15px;
+}
+
+.bg-authentication .brand-text {
+  color: #5A8DEE;
+  font-weight: 600;
+  letter-spacing: 0.01rem;
+}
+
+.left-auth, .right-auth {
+  align-items: center;height: 100vh;
+}
+
+.left-auth {
+  background: #131729;
+}
+.right-auth {
+  background: #F3F4FB;
+}
+
+@media only screen and (min-width: 992px) {
+  .bg-authentication .disable-rounded-right {
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+  }
+}
+
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  /* IE Specific CSS */
+  .bg-authentication {
+    width: 100%;
+    display: block;
+  }
+}

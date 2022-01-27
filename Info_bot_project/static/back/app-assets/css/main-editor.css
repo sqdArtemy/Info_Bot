@@ -1,0 +1,16 @@
+.tab-content.main-editor {
+    background: none;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+form.dropzone {
+    min-height: 200px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    transform: rotate(0);
+    margin-left: -8px;
+}
+.card-body.bolimlar .checkbox{
+    margin-bottom: 8px;
+}

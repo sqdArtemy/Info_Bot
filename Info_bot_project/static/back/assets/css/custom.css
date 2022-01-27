@@ -1,0 +1,23 @@
+
+.post-title {
+    width: 40%;
+}
+
+.custom-drag {
+    display: flex;
+    align-items: center;
+}
+
+.nestable{
+    display: flex;
+    flex-direction: column;
+}
+
+
+
+.toolbar.sticky {
+  position: fixed;
+  top: 0;
+  background-color: rgba(255,255,255,0.9);
+}
+.toolbar.sticky + #edit-details {padding-top:84px;}

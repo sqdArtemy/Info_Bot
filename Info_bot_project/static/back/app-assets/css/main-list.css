@@ -1,0 +1,20 @@
+.heading-elements .main-list-heading {
+    display: flex;
+}
+
+.heading-elements .main-list-heading li {
+    display: flex;
+}
+.heading-elements .main-list-heading li.add-new-button {
+    display: flex;
+    margin-left: auto !important;
+}
+.heading-elements .main-list-heading .dropdown .flag-icon {
+    margin-right: 12px;
+}
+.heading-elements .main-list-heading li.main-searchh {
+    margin-right: 24px;
+}
+.heading-elements .main-list-heading .nav-link {
+    color: #596F88;
+}
