@@ -55,12 +55,13 @@ def poll_handler(update: Update, context: CallbackContext):  # handle answers fo
     chat_id = get_id(update)
     answer = Answer.objects.filter(id=data).get()
     user = User.objects.filter(tg_id=chat_id)
+    bot_user = user.get()
     poll = Questionnaire.objects.filter(id=get_item(update, 'poll'))
     questions = QuestionPoll.objects.filter(questionnaire=poll.get())
-    poll.update(number_answers=poll.get().number_answers - 1)
-    user.update(score=user.get().score + answer.points)
-    if not poll.get().number_answers <= 0:
-        question = questions[poll.get().question_amount - poll.get().number_answers]
+    user.update(number_answers=bot_user.number_answers - 1)
+    user.update(score=bot_user.score + answer.points)
+    if not bot_user.number_answers <= 0:
+        question = questions[poll.get().question_amount - bot_user.number_answers]
         answers = Answer.objects.filter(question=question)
         query.edit_message_text(
             text=question.text,

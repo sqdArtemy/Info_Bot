@@ -90,7 +90,6 @@ class Questionnaire(models.Model):
     name = models.CharField('Name of the questionnaire', max_length=256, unique=True)
     question_amount = models.IntegerField('Amount of questions', default=5)
     answers = models.TextField('Table with answer-points')
-    number_answers = models.PositiveIntegerField('Number of question', blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -111,6 +110,7 @@ class User(models.Model):
     weight = models.CharField('User`s weight', max_length=256, blank=True, null=True)
     height = models.CharField('User`s height', max_length=256, blank=True, null=True)
     score = models.PositiveIntegerField('Overall score for poll', blank=True, null=True)
+    number_answers = models.PositiveIntegerField('Number of question', blank=True, default=0)
 
     def __str__(self) -> str:
         return f'{self.name}'
