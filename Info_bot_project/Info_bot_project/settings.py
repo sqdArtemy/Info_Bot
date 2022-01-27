@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
+import os.path
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -136,16 +136,19 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Telegram bot token 
-TOKEN = 'token'
+TOKEN = '5091830633:AAHwGC-HNt7tvXuFOIal51fu5XjvtznZYTM'
 
 # Server`s url
-URL = 'url/'
+URL = 'https://9300-31-40-29-18.ngrok.io/'
 
 # Model translation
 MODELTRANSLATION_TRANSLATION_FILES = (
