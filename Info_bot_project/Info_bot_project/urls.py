@@ -15,9 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from bot.views import BotView
+from Info_bot_project.bot import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('info_bot/', BotView.as_view())
+    path('info_bot/', views.BotView.as_view())
 ]
