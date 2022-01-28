@@ -77,6 +77,7 @@ class Language(models.Model):
 class Publication(models.Model):
     category = models.ForeignKey(Category, on_delete=CASCADE)
     topic = models.CharField('Publication`s topic', max_length=256)
+    image = models.ImageField('Image for publication', upload_to='images/')
     text = models.TextField('Publication`s text', blank=True)
     link = models.CharField('Reference link', max_length=100)
     language = models.ForeignKey(Language, on_delete=PROTECT)
