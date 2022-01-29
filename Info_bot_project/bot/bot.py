@@ -6,6 +6,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from .functions import get_id, get_item, keyboard_maker, get_phrase, inline_keyboard_maker, message_sender
 from django.conf import settings
+from core import local_settings
 
 bot = Bot(token=settings.TOKEN)  # telegram bot
 # conversation states
@@ -136,7 +137,7 @@ def post_finder(update: Update, context: CallbackContext):
         user_keywords = text.split(' ')
 
         def no_posts():  # if there is no publication bot will send this message
-            keyboard = [[KeyboardButton(text=get_phrase(update, 'question_menu'))], back_button],
+            keyboard = [[KeyboardButton(text=get_phrase(update, 'question_menu'))], back_button]
             message_sender(update, text=get_phrase(update, 'no_posts'), keyboard=keyboard)
             return MENU
 
@@ -159,7 +160,13 @@ def post_finder(update: Update, context: CallbackContext):
                         text = ''.join(
                             ['*', post.topic, '*', '\n\n', post.text, '\n', '*', get_phrase(update, 'reference_link'),
                              '*', ': ', post.link])
-                        update.message.reply_text(text=text, parse_mode=telegram.ParseMode.MARKDOWN)
+                        image = open(post.image.path, 'rb')
+                        bot.send_photo(
+                            chat_id=get_id(update),
+                            photo=image.read(),
+                            caption=text,
+                            parse_mode=telegram.ParseMode.MARKDOWN
+                        )
                     except TelegramError:
                         raise TelegramError
                 posts = []
@@ -233,9 +240,9 @@ def question_observe(sender, instance: Question, **kwargs):
 
 @receiver(post_save, sender=Publication)  # if there is new publication, bot sends it to the group
 def publication_sender(sender, instance: Publication, **kwargs):
-    try:
         text = f"*{instance.topic}*\n\n{instance.text}\n*{instance.language.reference_link}*: {instance.link}"
         channel = Link.objects.filter(name='Channel_id').get()
-        bot.send_message(chat_id=channel.link, text=text, parse_mode=telegram.ParseMode.MARKDOWN)
-    except TelegramError:
-        raise TelegramError
+        image = open(instance.image.path, 'rb')
+        bot.send_photo(chat_id=channel.link, photo=image.read(), caption=text, parse_mode=telegram.ParseMode.MARKDOWN)
+
+
