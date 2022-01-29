@@ -60,7 +60,7 @@ def poll_handler(update: Update, context: CallbackContext):  # handle answers fo
     poll = Questionnaire.objects.filter(id=get_item(update, 'poll'))
     questions = QuestionPoll.objects.filter(questionnaire=poll.get())
     if not user.get().number_answers <= 0:
-        question = questions[poll.get().question_amount - user.get().number_answers]
+        question = questions[poll.get().questions_number - user.get().number_answers]
         answers = Answer.objects.filter(question=question)
         query.edit_message_text(
             text=f'{question.text}',

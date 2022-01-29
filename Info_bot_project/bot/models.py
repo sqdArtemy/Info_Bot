@@ -89,7 +89,7 @@ class Publication(models.Model):
 class Questionnaire(models.Model):
     category = models.ForeignKey(Category, on_delete=SET_NULL, null=True, blank=True)
     name = models.CharField('Name of the questionnaire', max_length=256, unique=True)
-    question_amount = models.IntegerField('Amount of questions', default=5)
+    questions_number = models.IntegerField('Number of questions', default=5)
     answers = models.TextField('Table with answer-points')
     number_answers = models.IntegerField('Amount of answers', default=5)
 

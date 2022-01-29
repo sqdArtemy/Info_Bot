@@ -198,7 +198,7 @@ def polls_selection(update: Update, context: CallbackContext):
 
         # set counter values to default values
         User.objects.filter(tg_id=chat_id).update(poll=poll, score=0)
-        User.objects.filter(tg_id=chat_id).update(number_answers=poll.question_amount)
+        User.objects.filter(tg_id=chat_id).update(number_answers=poll.questions_number)
 
         # creating text of the answer
         questions = QuestionPoll.objects.filter(questionnaire=poll)
