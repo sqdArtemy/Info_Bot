@@ -91,6 +91,7 @@ class Questionnaire(models.Model):
     name = models.CharField('Name of the questionnaire', max_length=256, unique=True)
     questions_number = models.IntegerField('Number of questions', default=5)
     answers = models.TextField('Table with answer-points')
+    number_answers = models.CharField('Number of answers', max_length=256, default=5)
 
     def __str__(self) -> str:
         return f'{self.name}'
