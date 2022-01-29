@@ -60,7 +60,6 @@ class Language(models.Model):
     write_suggestion = models.CharField('Write your suggestion', max_length=256, blank=True)
     age = models.CharField('Age of user', max_length=256, blank=True)
     gender = models.CharField('User`s gender', max_length=256, blank=True)
-    marriage = models.CharField('Is user married?', max_length=256, blank=True)
     weight = models.CharField('User`s weight', max_length=256, blank=True)
     height = models.CharField('User`s height,', max_length=256, blank=True)
     male = models.CharField('Male', max_length=256, blank=True)
@@ -69,6 +68,7 @@ class Language(models.Model):
     yes = models.CharField('yes', max_length=256, blank=True)
     no = models.CharField('no', max_length=256, blank=True)
     final_score = models.CharField('User`s score for poll', max_length=256, blank=True)
+    marriage = models.CharField('Is user married?', max_length=256, blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
