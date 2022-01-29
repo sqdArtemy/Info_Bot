@@ -15,7 +15,7 @@ def gender_n_marriage_handler(update: Update, context: CallbackContext):
     if text == get_phrase(update, 'male') or text == get_phrase(update, 'female'):
         user.update(gender=text)
         keyboard = [[KeyboardButton(get_phrase(update, 'yes')), KeyboardButton(get_phrase(update, 'no'))]]
-        message_sender(update, text=get_phrase(update, 'mariage'), keyboard=keyboard)
+        message_sender(update, text=get_phrase(update, 'marriage'), keyboard=keyboard)
         return MARRIAGE
     elif text == get_phrase(update, 'yes') or text == get_phrase(update, 'no'):
         user.update(mariage=text)
@@ -145,7 +145,7 @@ def message_handler(update: Update, context: CallbackContext):  # handles all me
             text=user.question,
             user_age=user.age,
             user_gender=user.gender,
-            user_mariage=user.mariage,
+            user_mariage=user.marriage,
             user_weight=user.weight,
             user_height=user.height,
         )
