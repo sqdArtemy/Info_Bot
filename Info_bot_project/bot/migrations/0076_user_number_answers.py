@@ -10,9 +10,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='user',
-            name='number_answers',
-            field=models.PositiveIntegerField(blank=True, default=0, verbose_name='Number of question'),
-        ),
+        # migrations.AddField(
+        #     model_name='user',
+        #     name='number_answers',
+        #     field=models.PositiveIntegerField(blank=True, default=0, verbose_name='Number of question'),
+        # ),
     ]
