@@ -107,7 +107,6 @@ class User(models.Model):
     is_anonymous = models.BooleanField('Is user anonymous?', default=False)
     age = models.PositiveIntegerField('User`s age', blank=True, null=True)
     gender = models.CharField('User`s gender', max_length=256, blank=True, null=True)
-    marriage = models.CharField('User`s marriage status', max_length=256, blank=True, null=True)
     weight = models.CharField('User`s weight', max_length=256, blank=True, null=True)
     height = models.CharField('User`s height', max_length=256, blank=True, null=True)
     score = models.PositiveIntegerField('Overall score for poll', blank=True, null=True)
