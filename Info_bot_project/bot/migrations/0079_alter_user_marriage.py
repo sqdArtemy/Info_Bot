@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bot', '0079_user_number_answers'),
+        ('bot', '0078_language_marriage_user_number_answers'),
     ]
 
     operations = [

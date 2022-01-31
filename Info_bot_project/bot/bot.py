@@ -6,7 +6,6 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from .functions import get_id, get_item, keyboard_maker, get_phrase, inline_keyboard_maker, message_sender
 from django.conf import settings
-from core import local_settings
 
 bot = Bot(token=settings.TOKEN)  # telegram bot
 # conversation states
@@ -194,7 +193,7 @@ def polls_selection(update: Update, context: CallbackContext):
     if text != back:
         chat_id = get_id(update)
         poll_object = Questionnaire.objects.filter(name=text)
-        poll = poll_object.get()
+        poll = poll_objecуt.get()
 
         # set counter values to default values
         User.objects.filter(tg_id=chat_id).update(poll=poll, score=0)
