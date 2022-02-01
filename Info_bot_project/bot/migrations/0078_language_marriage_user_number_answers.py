@@ -10,11 +10,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='language',
-            name='marriage',
-            field=models.CharField(blank=True, max_length=256, verbose_name='Is user married?'),
-        ),
+        # migrations.AddField(
+        #     model_name='language',
+        #     name='marriage',
+        #     field=models.CharField(blank=True, max_length=256, verbose_name='Is user married?'),
+        # ),
         migrations.AddField(
             model_name='user',
             name='number_answers',
