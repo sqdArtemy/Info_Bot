@@ -15,9 +15,9 @@ class Migration(migrations.Migration):
             name='marriage',
             field=models.CharField(blank=True, max_length=256, verbose_name='Is user married?'),
         ),
-        # migrations.AddField(
-        #     model_name='user',
-        #     name='number_answers',
-        #     field=models.PositiveIntegerField(blank=True, default=0, verbose_name='Number of question'),
-        # ),
+        migrations.AddField(
+            model_name='user',
+            name='number_answers',
+            field=models.PositiveIntegerField(blank=True, default=0, verbose_name='Number of question'),
+        ),
     ]
