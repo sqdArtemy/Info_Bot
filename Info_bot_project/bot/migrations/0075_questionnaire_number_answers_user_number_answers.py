@@ -10,9 +10,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='questionnaire',
-            name='number_answers',
-            field=models.CharField(default=5, max_length=256, verbose_name='Number of answers'),
-        ),
+        # migrations.AddField(
+        #     model_name='questionnaire',
+        #     name='number_answers',
+        #     field=models.CharField(default=5, max_length=256, verbose_name='Number of answers'),
+        # ),
     ]
