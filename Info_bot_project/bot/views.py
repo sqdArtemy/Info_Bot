@@ -34,6 +34,6 @@ class BotView(APIView):
             dispatcher.process_update(Update.de_json(request.data, bot))
             return JsonResponse({"ok": "POST request processed"})
         except:
-            raise JsonResponse({"err": "Something went wrong, request was not proceed "}) 
+            return JsonResponse({"err": "Something went wrong, request was not proceed "})
 
 # go to http://127.0.0.1:8000/info_bot/ in order to set webhook
