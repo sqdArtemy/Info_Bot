@@ -193,7 +193,7 @@ def polls_selection(update: Update, context: CallbackContext):
     if text != back:
         chat_id = get_id(update)
         poll_object = Questionnaire.objects.filter(name=text)
-        poll = poll_objecуt.get()
+        poll = poll_object.get()
 
         # set counter values to default values
         User.objects.filter(tg_id=chat_id).update(poll=poll, score=0)
